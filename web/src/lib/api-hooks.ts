@@ -106,6 +106,43 @@ export interface WeeklyReportDTO {
   user?: { id: string; name: string; email: string }
 }
 
+export interface ProjectDailyEmployeeDTO {
+  userId: string
+  name: string
+  email: string
+  position: string | null
+  skills: string | null
+  role: string
+  workload: number | null
+  joiningDate: string | null
+  checkIn: string | null
+  checkOut: string | null
+  totalMinutes: number
+  commitCount: number
+  fileEditCount: number
+  activityEvents: Array<{ id: string; type: string; payload: Record<string, unknown>; timestamp: string }>
+  summaryId: string | null
+  summaryContent: string | null
+  summaryStatus: string | null
+}
+
+export interface ProjectDailyDTO {
+  project: {
+    id: string
+    name: string
+    code: string
+    status: string
+    priority: string | null
+    category: string | null
+    description: string | null
+    teamLead: { id: string; name: string } | null
+    manager: { id: string; name: string }
+    totalMembers: number
+  }
+  date: string
+  employees: ProjectDailyEmployeeDTO[]
+}
+
 // ── Content parsers ───────────────────────────────────────────
 
 export interface ParsedSummary {
@@ -391,6 +428,14 @@ export function useEmployeeSummaries(employeeId: string) {
     () => api<DailySummaryDTO[]>(`/summaries/employee/${employeeId}`),
     [employeeId],
     !!employeeId,
+  )
+}
+
+export function useProjectDailySummary(projectId: string, date: string) {
+  return useFetch<ProjectDailyDTO>(
+    () => api<ProjectDailyDTO>(`/summaries/project/${projectId}?date=${date}`),
+    [projectId, date],
+    !!projectId && !!date,
   )
 }
 

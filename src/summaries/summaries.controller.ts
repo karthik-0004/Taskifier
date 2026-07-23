@@ -77,6 +77,16 @@ export class SummariesController {
     return this.summariesService.reject(id, req.user.id);
   }
 
+  @Roles('MANAGER')
+  @Get('project/:projectId')
+  projectDaily(
+    @Param('projectId', ParseUUIDPipe) projectId: string,
+    @Query('date') date: string,
+  ) {
+    if (!date) date = new Date().toISOString().slice(0, 10);
+    return this.summariesService.findProjectDaily(projectId, date);
+  }
+
   @Roles('MANAGER', 'EMPLOYEE')
   @Get(':id')
   findOne(

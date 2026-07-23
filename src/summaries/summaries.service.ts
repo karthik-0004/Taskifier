@@ -138,6 +138,88 @@ export class SummariesService {
     });
   }
 
+  async findProjectDaily(projectId: string, dateStr: string) {
+    const date = new Date(dateStr + 'T00:00:00.000Z');
+    const nextDay = new Date(date);
+    nextDay.setUTCDate(nextDay.getUTCDate() + 1);
+
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+      include: {
+        assignments: {
+          include: { user: { select: { id: true, name: true, email: true, position: true, skills: true } } },
+        },
+        teamLead: { select: { id: true, name: true } },
+        manager: { select: { id: true, name: true } },
+      },
+    });
+
+    if (!project) throw new NotFoundException('Project not found');
+
+    const employeeIds = project.assignments.map((a) => a.userId);
+
+    const [attendanceRecords, summaries, sessions] = await Promise.all([
+      this.prisma.attendance.findMany({
+        where: { userId: { in: employeeIds }, date: { gte: date, lt: nextDay } },
+      }),
+      this.prisma.dailySummary.findMany({
+        where: { userId: { in: employeeIds }, date: { gte: date, lt: nextDay } },
+      }),
+      this.prisma.workSession.findMany({
+        where: { userId: { in: employeeIds }, startedAt: { gte: date, lt: nextDay } },
+        include: { activityEvents: { orderBy: { timestamp: 'asc' } } },
+      }),
+    ]);
+
+    const employees = project.assignments.map((a) => {
+      const attendance = attendanceRecords.find((ar) => ar.userId === a.userId);
+      const summary = summaries.find((s) => s.userId === a.userId);
+      const userSessions = sessions.filter((s) => s.userId === a.userId);
+      const allEvents = userSessions.flatMap((s) => s.activityEvents);
+      const totalMinutes = userSessions.reduce((acc, s) => {
+        if (!s.endedAt) return acc;
+        return acc + (s.endedAt.getTime() - s.startedAt.getTime()) / 60000;
+      }, 0);
+
+      return {
+        userId: a.userId,
+        name: a.user.name,
+        email: a.user.email,
+        position: a.user.position,
+        skills: a.user.skills,
+        role: a.role,
+        workload: a.workload,
+        joiningDate: a.joiningDate,
+        checkIn: attendance?.checkInAt ?? null,
+        checkOut: attendance?.checkOutAt ?? null,
+        totalMinutes: Math.round(totalMinutes),
+        commitCount: allEvents.filter((e) => e.type === 'COMMIT').length,
+        fileEditCount: allEvents.filter((e) => e.type === 'FILE_EDIT').length,
+        activityEvents: allEvents,
+        summaryId: summary?.id ?? null,
+        summaryContent: summary?.editedContent ?? summary?.aiGeneratedContent ?? null,
+        summaryStatus: summary?.status ?? null,
+      };
+    });
+
+    return {
+      project: {
+        id: project.id,
+        name: project.name,
+        code: project.code,
+        status: project.status,
+        priority: project.priority,
+        category: project.category,
+        description: project.description,
+        teamLead: project.teamLead,
+        manager: project.manager,
+        totalMembers: project.assignments.length,
+      },
+      date: dateStr,
+      employees,
+    };
+  }
+
   private async getOwnDraft(id: string, userId: string) {
     const summary = await this.prisma.dailySummary.findUnique({
       where: { id },

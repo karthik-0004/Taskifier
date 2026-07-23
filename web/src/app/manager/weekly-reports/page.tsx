@@ -1,197 +1,121 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { staggerContainer, staggerItem } from "@/components/animations"
-import { FileText, User } from "lucide-react"
+import { Users, GitCommit, Clock, ArrowRight, BarChart3, Calendar } from "lucide-react"
 import { PageHeader } from "@/components/page-header"
-import { Select } from "@/components/ui/select"
-import { Avatar } from "@/components/ui/avatar"
+import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { EmptyState } from "@/components/empty-state"
 import { useToast } from "@/components/ui/toast"
-import { useTeamReports, useUsers, parseReportContent } from "@/lib/api-hooks"
+import { useProjects } from "@/lib/api-hooks"
 
-function formatWeekDisplay(weekStart: string): string {
-  const start = new Date(weekStart + "T00:00:00Z")
-  const end = new Date(start)
-  end.setDate(end.getDate() + 6)
-  const fmt = (d: Date) =>
-    d.toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })
-  return `${fmt(start)} – ${fmt(end)}`
+function statusBadge(status: string) {
+  const map: Record<string, { variant: "success" | "warning" | "default" | "danger" | "accent"; label: string }> = {
+    PLANNING: { variant: "accent", label: "Planning" },
+    NOT_STARTED: { variant: "default", label: "Not Started" },
+    IN_PROGRESS: { variant: "success", label: "In Progress" },
+    ON_HOLD: { variant: "warning", label: "On Hold" },
+    COMPLETED: { variant: "default", label: "Completed" },
+    CANCELLED: { variant: "danger", label: "Cancelled" },
+  }
+  const s = map[status] ?? { variant: "default" as const, label: status }
+  return <Badge variant={s.variant}>{s.label}</Badge>
 }
 
-function formatDate(iso: string): string {
-  return iso.slice(0, 10)
+function getWeekRange(): string {
+  const now = new Date()
+  const day = now.getDay()
+  const diff = now.getDate() - day + (day === 0 ? -6 : 1)
+  const monday = new Date(now)
+  monday.setDate(diff)
+  const sunday = new Date(monday)
+  sunday.setDate(sunday.getDate() + 6)
+  const fmt = (d: Date) => d.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+  return `${fmt(monday)} – ${fmt(sunday)}`
 }
 
 export default function WeeklyReportsPage() {
+  const router = useRouter()
   const { toast } = useToast()
-  const { data: usersData } = useUsers()
-  const { data: reportsData, loading, error } = useTeamReports()
-  const [employeeFilter, setEmployeeFilter] = useSyncedState("all")
-  const [weekFilter, setWeekFilter] = useSyncedState("")
+  const { data: projectsData, loading, error } = useProjects()
 
-  useEffect(() => {
-    if (error) toast(error, "error")
-  }, [error, toast])
-
-  const employees = usersData ?? []
-
-  const allWeeks = useMemo(() => {
-    const weeks = new Set<string>()
-    for (const r of reportsData ?? []) {
-      weeks.add(formatDate(r.weekStart))
-    }
-    return Array.from(weeks).sort().reverse()
-  }, [reportsData])
-
-  const filtered = useMemo(() => {
-    return (reportsData ?? [])
-      .filter((r) => employeeFilter === "all" || r.userId === employeeFilter)
-      .filter((r) => !weekFilter || formatDate(r.weekStart) === weekFilter)
-      .map((r) => ({
-        employeeId: r.userId,
-        employeeName: r.user?.name ?? "Unknown",
-        weekStart: formatDate(r.weekStart),
-        parsed: parseReportContent(r.content),
-      }))
-  }, [reportsData, employeeFilter, weekFilter])
+  const activeProjects = (projectsData ?? []).filter((p) =>
+    !["COMPLETED", "CANCELLED"].includes(p.status),
+  )
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Weekly Reports"
-        subtitle="AI-generated weekly engineering reports"
+        subtitle="AI-generated weekly engineering reports organized by project"
       />
 
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="relative w-56">
-          <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-          <Select
-            value={employeeFilter}
-            onChange={(e) => setEmployeeFilter(e.target.value)}
-            className="pl-9"
-          >
-            <option value="all">All Employees</option>
-            {employees.map((emp) => (
-              <option key={emp.id} value={emp.id}>
-                {emp.name}
-              </option>
-            ))}
-          </Select>
-        </div>
-        <div className="relative w-56">
-          <FileText size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-          <Select
-            value={weekFilter}
-            onChange={(e) => setWeekFilter(e.target.value)}
-            className="pl-9"
-          >
-            <option value="">All Weeks</option>
-            {allWeeks.map((week) => (
-              <option key={week} value={week}>
-                {formatWeekDisplay(week)}
-              </option>
-            ))}
-          </Select>
-        </div>
-      </div>
-
       {loading ? (
-        <div className="max-w-2xl space-y-6">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} variant="rectangular" className="h-64 w-full" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} variant="rectangular" className="h-44" />
           ))}
         </div>
-      ) : filtered.length === 0 ? (
-        <EmptyState
-          message="No reports match the selected filters"
-          description="Try selecting a different employee or week."
-        />
+      ) : activeProjects.length === 0 ? (
+        <div className="rounded-xl border border-dashed px-6 py-16 text-center">
+          <p className="text-body text-muted-foreground">No active projects with weekly reports.</p>
+        </div>
       ) : (
         <motion.div
           variants={staggerContainer}
           initial="hidden"
           animate="visible"
-          className="max-w-2xl space-y-6"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
         >
-          {filtered.map((item) => (
-            <motion.div
-              key={`${item.employeeId}-${item.weekStart}`}
-              variants={staggerItem}
-            >
-              <div className="rounded-xl border bg-card p-6 shadow-soft">
-                <div className="flex items-center gap-3 mb-5">
-                  <Avatar name={item.employeeName} size="md" />
-                  <div>
-                    <p className="text-body font-medium">{item.employeeName}</p>
-                    <p className="text-caption text-muted-foreground">
-                      {formatWeekDisplay(item.weekStart)}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="space-y-5 text-body-sm">
-                  <ReportSection
-                    label="Features Completed"
-                    items={item.parsed.featuresCompleted}
-                  />
-
-                  <ReportSection
-                    label="Bugs Fixed"
-                    items={item.parsed.bugsFixed}
-                  />
-
-                  <div>
-                    <span className="text-caption font-medium text-muted-foreground tracking-wide uppercase">
-                      Pull Requests Merged
-                    </span>
-                    <p className="mt-1 text-foreground font-semibold tabular-nums">
-                      {item.parsed.prsMerged || "—"}
-                    </p>
+          {activeProjects.map((project) => (
+            <motion.div key={project.id} variants={staggerItem}>
+              <Card hover="lift" className="h-full">
+                <CardContent className="p-5 flex flex-col h-full">
+                  <div className="flex items-start justify-between gap-2 mb-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-body-sm font-semibold truncate">{project.name}</p>
+                      <p className="text-caption font-mono text-muted-foreground">{project.code}</p>
+                    </div>
+                    {statusBadge(project.status)}
                   </div>
 
-                  {item.parsed.blockers.length > 0 && (
-                    <ReportSection
-                      label="Blockers"
-                      items={item.parsed.blockers}
-                    />
-                  )}
+                  <div className="flex items-center gap-2 text-caption text-muted-foreground mb-4">
+                    <Calendar size={12} />
+                    <span>{getWeekRange()}</span>
+                  </div>
 
-                  <ReportSection
-                    label="Upcoming Work"
-                    items={item.parsed.upcomingWork}
-                  />
-                </div>
-              </div>
+                  <div className="space-y-2 flex-1 mb-4">
+                    <div className="flex items-center justify-between text-body-sm">
+                      <span className="text-muted-foreground flex items-center gap-1.5"><Users size={12} /> Team Size</span>
+                      <span className="font-medium">{project.assignments.length}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-body-sm">
+                      <span className="text-muted-foreground flex items-center gap-1.5"><GitCommit size={12} /> Total Commits</span>
+                      <span className="font-medium">—</span>
+                    </div>
+                    <div className="flex items-center justify-between text-body-sm">
+                      <span className="text-muted-foreground flex items-center gap-1.5"><Clock size={12} /> Total Hours</span>
+                      <span className="font-medium">—</span>
+                    </div>
+                  </div>
+
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="w-full mt-auto"
+                    onClick={() => router.push(`/manager/weekly-reports/${project.id}`)}
+                  >
+                    View Report <ArrowRight size={12} />
+                  </Button>
+                </CardContent>
+              </Card>
             </motion.div>
           ))}
         </motion.div>
       )}
     </div>
   )
-}
-
-function ReportSection({ label, items }: { label: string; items: string[] }) {
-  return (
-    <div>
-      <span className="text-caption font-medium text-muted-foreground tracking-wide uppercase">
-        {label}
-      </span>
-      <ul className="mt-1.5 space-y-1">
-        {items.map((item, i) => (
-          <li key={i} className="flex items-start gap-2 text-foreground leading-relaxed">
-            <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-accent/40" />
-            {item}
-          </li>
-        ))}
-      </ul>
-    </div>
-  )
-}
-
-function useSyncedState(initial: string): [string, (v: string) => void] {
-  const [val, setVal] = useState(initial)
-  return [val, setVal]
 }

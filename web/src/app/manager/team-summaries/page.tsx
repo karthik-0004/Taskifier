@@ -1,156 +1,110 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { staggerContainer, staggerItem } from "@/components/animations"
-import { Calendar, User } from "lucide-react"
+import { Users, ArrowRight, GitBranch, Clock } from "lucide-react"
 import { PageHeader } from "@/components/page-header"
-import { Select } from "@/components/ui/select"
-import { Avatar } from "@/components/ui/avatar"
+import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { EmptyState } from "@/components/empty-state"
 import { useToast } from "@/components/ui/toast"
-import { useTeamSummaries, useUsers, parseSummaryContent } from "@/lib/api-hooks"
+import { useProjects, parseSummaryContent } from "@/lib/api-hooks"
 
-function formatDate(iso: string): string {
-  return iso.slice(0, 10)
+function statusBadge(status: string) {
+  const map: Record<string, { variant: "success" | "warning" | "default" | "danger" | "accent"; label: string }> = {
+    PLANNING: { variant: "accent", label: "Planning" },
+    NOT_STARTED: { variant: "default", label: "Not Started" },
+    IN_PROGRESS: { variant: "success", label: "In Progress" },
+    ON_HOLD: { variant: "warning", label: "On Hold" },
+    COMPLETED: { variant: "default", label: "Completed" },
+    CANCELLED: { variant: "danger", label: "Cancelled" },
+  }
+  const s = map[status] ?? { variant: "default" as const, label: status }
+  return <Badge variant={s.variant}>{s.label}</Badge>
 }
 
 export default function TeamSummariesPage() {
+  const router = useRouter()
   const { toast } = useToast()
-  const { data: usersData } = useUsers()
-  const [employeeFilter, setEmployeeFilter] = useState("all")
-  const [fromDate, setFromDate] = useState("")
-  const [toDate, setToDate] = useState("")
+  const { data: projectsData, loading, error } = useProjects()
 
-  const { data: summariesData, loading, error } = useTeamSummaries({
-    employeeId: employeeFilter !== "all" ? employeeFilter : undefined,
-    startDate: fromDate || undefined,
-    endDate: toDate || undefined,
-  })
-
-  useEffect(() => {
-    if (error) toast(error, "error")
-  }, [error, toast])
-
-  const employees = usersData ?? []
-
-  const filtered = useMemo(() => {
-    return (summariesData ?? []).map((s) => ({
-      employeeId: s.userId,
-      employeeName: s.user?.name ?? "Unknown",
-      date: formatDate(s.date),
-      parsed: parseSummaryContent(s.editedContent ?? s.aiGeneratedContent),
-    }))
-  }, [summariesData])
+  const activeProjects = (projectsData ?? []).filter((p) =>
+    !["COMPLETED", "CANCELLED"].includes(p.status),
+  )
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Team Summaries"
-        subtitle="Approved daily summaries from your team — read-only"
+        subtitle="View daily activity summaries by project — select a project to see your team's day"
       />
 
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="relative w-56">
-          <User size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-          <Select
-            value={employeeFilter}
-            onChange={(e) => setEmployeeFilter(e.target.value)}
-            className="pl-9"
-          >
-            <option value="all">All Employees</option>
-            {employees.map((emp) => (
-              <option key={emp.id} value={emp.id}>
-                {emp.name}
-              </option>
-            ))}
-          </Select>
-        </div>
-        <div className="relative w-40">
-          <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-          <input
-            type="date"
-            value={fromDate}
-            onChange={(e) => setFromDate(e.target.value)}
-            className="flex h-10 w-full rounded-xl border border-input bg-background pl-9 pr-3 py-2 text-body-sm placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 hover:border-foreground/30 transition-colors"
-            placeholder="From"
-            aria-label="From date"
-          />
-        </div>
-        <div className="relative w-40">
-          <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-          <input
-            type="date"
-            value={toDate}
-            onChange={(e) => setToDate(e.target.value)}
-            className="flex h-10 w-full rounded-xl border border-input bg-background pl-9 pr-3 py-2 text-body-sm placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 hover:border-foreground/30 transition-colors"
-            placeholder="To"
-            aria-label="To date"
-          />
-        </div>
-      </div>
-
       {loading ? (
-        <div className="max-w-2xl space-y-4">
-          {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} variant="rectangular" className="h-48 w-full" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} variant="rectangular" className="h-40" />
           ))}
         </div>
-      ) : filtered.length === 0 ? (
-        <EmptyState
-          message="No summaries match the selected filters"
-          description="Try adjusting the employee or date range to see more results."
-        />
+      ) : activeProjects.length === 0 ? (
+        <div className="rounded-xl border border-dashed px-6 py-16 text-center">
+          <p className="text-body text-muted-foreground">No active projects with team summaries.</p>
+        </div>
       ) : (
         <motion.div
           variants={staggerContainer}
           initial="hidden"
           animate="visible"
-          className="max-w-2xl space-y-4"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
         >
-          {filtered.map((item) => (
-            <motion.div
-              key={`${item.employeeId}-${item.date}`}
-              variants={staggerItem}
-            >
-              <div className="rounded-xl border bg-card p-5 shadow-soft">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <Avatar name={item.employeeName} size="sm" />
-                    <div>
-                      <p className="text-body-sm font-medium">{item.employeeName}</p>
-                      <p className="text-caption text-muted-foreground">{item.date}</p>
+          {activeProjects.map((project) => (
+            <motion.div key={project.id} variants={staggerItem}>
+              <Card hover="lift" className="h-full">
+                <CardContent className="p-5 flex flex-col h-full">
+                  <div className="flex items-start justify-between gap-2 mb-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-body-sm font-semibold truncate">{project.name}</p>
+                      <p className="text-caption font-mono text-muted-foreground">{project.code}</p>
+                    </div>
+                    {statusBadge(project.status)}
+                  </div>
+
+                  <div className="space-y-2 flex-1 mb-4">
+                    <div className="flex items-center justify-between text-body-sm">
+                      <span className="text-muted-foreground flex items-center gap-1.5">
+                        <Users size={12} /> Members
+                      </span>
+                      <span className="font-medium">{project.assignments.length}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-body-sm">
+                      <span className="text-muted-foreground flex items-center gap-1.5">
+                        <GitBranch size={12} /> Priority
+                      </span>
+                      <span className="font-medium capitalize">{project.priority?.toLowerCase() ?? "—"}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-body-sm">
+                      <span className="text-muted-foreground flex items-center gap-1.5">
+                        <Clock size={12} /> Tasks
+                      </span>
+                      <span className="font-medium">—</span>
                     </div>
                   </div>
-                  <Badge variant="success">Approved</Badge>
-                </div>
 
-                <div className="space-y-4 text-body-sm">
-                  <Section label="Today&rsquo;s Work" text={item.parsed.todayWork} />
-                  <Section label="In Progress" text={item.parsed.inProgress} />
-                  {item.parsed.blockers && (
-                    <Section label="Blockers" text={item.parsed.blockers} />
-                  )}
-                  <Section label="Tomorrow" text={item.parsed.tomorrow} />
-                </div>
-              </div>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="w-full mt-auto"
+                    onClick={() => router.push(`/manager/team-summaries/${project.id}`)}
+                  >
+                    View Summary <ArrowRight size={12} />
+                  </Button>
+                </CardContent>
+              </Card>
             </motion.div>
           ))}
         </motion.div>
       )}
-    </div>
-  )
-}
-
-function Section({ label, text }: { label: string; text: string }) {
-  return (
-    <div>
-      <span className="text-caption font-medium text-muted-foreground tracking-wide uppercase">
-        {label}
-      </span>
-      <p className="mt-1 text-foreground leading-relaxed">{text}</p>
     </div>
   )
 }
