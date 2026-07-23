@@ -84,7 +84,7 @@ export class AttendanceService {
       where,
       orderBy: { date: 'desc' },
       include: {
-        user: { select: { id: true, name: true, email: true, role: true } },
+        user: { select: { id: true, name: true, email: true, role: true, position: true } },
       },
     });
   }

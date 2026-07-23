@@ -86,4 +86,33 @@ export class EmailService {
       `,
     });
   }
+
+  async sendProjectAssignmentEmail(user: { name: string; email: string }, project: {
+    projectName: string;
+    description?: string | null;
+    role: string;
+    startDate?: string;
+    deadline?: string;
+  }) {
+    const portalUrl = `${process.env.FRONTEND_URL ?? 'http://localhost:3001'}/employee/my-projects`;
+    await this.send({
+      to: user.email,
+      subject: `You've been assigned to ${project.projectName}`,
+      html: `
+        <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
+          <h1 style="color: #333;">New Project Assignment</h1>
+          <p>Hi <strong>${user.name}</strong>,</p>
+          <p>You have been assigned to a new project on Taskifier.</p>
+          <table style="background: #f5f5f5; border-radius: 8px; padding: 16px; margin: 16px 0; width: 100%;">
+            <tr><td style="padding: 4px 0; color: #666;">Project:</td><td style="padding: 4px 0; font-weight: 600;">${project.projectName}</td></tr>
+            ${project.description ? `<tr><td style="padding: 4px 0; color: #666;">Description:</td><td style="padding: 4px 0;">${project.description}</td></tr>` : ''}
+            <tr><td style="padding: 4px 0; color: #666;">Your Role:</td><td style="padding: 4px 0; font-weight: 600;">${project.role}</td></tr>
+            ${project.startDate ? `<tr><td style="padding: 4px 0; color: #666;">Start Date:</td><td style="padding: 4px 0;">${new Date(project.startDate).toLocaleDateString()}</td></tr>` : ''}
+            ${project.deadline ? `<tr><td style="padding: 4px 0; color: #666;">Expected Deadline:</td><td style="padding: 4px 0;">${new Date(project.deadline).toLocaleDateString()}</td></tr>` : ''}
+          </table>
+          <a href="${portalUrl}" style="display: inline-block; background: #6366f1; color: #fff; text-decoration: none; padding: 12px 24px; border-radius: 8px; font-weight: 600; margin: 8px 0;">View in Employee Portal</a>
+        </div>
+      `,
+    });
+  }
 }

@@ -1,3 +1,4 @@
-export { CreateProjectDto } from './create-project.dto';
-export { UpdateProjectDto } from './update-project.dto';
-export { AssignEmployeeDto } from './assign-employee.dto';
+export * from './create-project.dto';
+export * from './update-project.dto';
+export * from './assign-employee.dto';
+export * from './recommend-skills.dto';

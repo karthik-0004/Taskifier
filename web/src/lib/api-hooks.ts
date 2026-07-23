@@ -20,16 +20,40 @@ export interface ProjectAssignmentDTO {
   id: string
   userId: string
   projectId: string
-  user: { id: string; name: string; email: string; role: string }
+  role: string
+  workload: number | null
+  joiningDate: string | null
+  user: { id: string; name: string; email: string; role: string; position: string | null; skills: string | null }
 }
 
 export interface ProjectDTO {
   id: string
   name: string
+  code: string
   description: string | null
-  status: "ACTIVE" | "PAUSED" | "COMPLETED"
+  category: string | null
+  clientName: string | null
+  startDate: string | null
+  expectedEndDate: string | null
+  priority: string | null
+  status: string
+  projectManagerId: string | null
+  teamLeadId: string | null
+  maxTeamSize: number | null
+  estimatedDuration: number | null
+  budget: number | null
+  techStack: string | null
+  requiredSkills: string | null
+  repoUrl: string | null
+  docsUrl: string | null
+  tags: string | null
+  managerId: string
   createdAt: string
+  updatedAt: string
   assignments: ProjectAssignmentDTO[]
+  projectManager: { id: string; name: string; email: string } | null
+  teamLead: { id: string; name: string; email: string } | null
+  manager: { id: string; name: string; email: string }
 }
 
 export interface ActiveSessionDTO {
@@ -58,7 +82,7 @@ export interface AttendanceDTO {
   date: string
   checkInAt: string | null
   checkOutAt: string | null
-  user: { id: string; name: string; email: string; role: string }
+  user: { id: string; name: string; email: string; role: string; position: string | null }
 }
 
 export interface DailySummaryDTO {
@@ -277,27 +301,70 @@ export function useProject(id: string) {
   return useFetch<ProjectDTO>(() => api<ProjectDTO>(`/projects/${id}`), [id])
 }
 
-export function createProject(name: string, description: string, status: string) {
+export function createProject(data: {
+  name: string
+  code?: string
+  description?: string
+  category?: string
+  clientName?: string
+  startDate?: string
+  expectedEndDate?: string
+  priority?: string
+  status?: string
+  teamLeadId?: string
+  maxTeamSize?: number
+  estimatedDuration?: number
+  budget?: number
+  techStack?: string
+  requiredSkills?: string
+  repoUrl?: string
+  docsUrl?: string
+  tags?: string
+  assignments?: Array<{
+    employeeId: string
+    role?: string
+    workload?: number
+    joiningDate?: string
+  }>
+}) {
   return api<ProjectDTO>("/projects", {
     method: "POST",
-    body: JSON.stringify({
-      name,
-      description: description || undefined,
-      status: status === "on_hold" ? "PAUSED" : status.toUpperCase(),
-    }),
+    body: JSON.stringify(data),
   })
 }
 
-export function assignEmployeeToProjectBackend(projectId: string, employeeId: string) {
-  return api(`/projects/${projectId}/assign`, {
+export function assignEmployeeToProjectBackend(
+  projectId: string,
+  employeeId: string,
+  options?: { role?: string; workload?: number; joiningDate?: string },
+) {
+  return api<ProjectAssignmentDTO>(`/projects/${projectId}/assign`, {
     method: "POST",
-    body: JSON.stringify({ employeeId }),
+    body: JSON.stringify({ employeeId, ...options }),
+  })
+}
+
+export function updateAssignment(
+  projectId: string,
+  employeeId: string,
+  data: { role?: string; workload?: number; joiningDate?: string },
+) {
+  return api(`/projects/${projectId}/assign/${employeeId}`, {
+    method: "PATCH",
+    body: JSON.stringify(data),
   })
 }
 
 export function unassignEmployeeFromProjectBackend(projectId: string, employeeId: string) {
   return api(`/projects/${projectId}/assign/${employeeId}`, {
     method: "DELETE",
+  })
+}
+
+export function recommendSkills(description: string) {
+  return api<{ extractedSkills: string[]; suggestedEmployees: Array<{ id: string; name: string; email: string; position: string | null; skills: string | null; matchCount: number; matchPercent: number }> }>("/projects/recommend-skills", {
+    method: "POST",
+    body: JSON.stringify({ description }),
   })
 }
 

@@ -21,7 +21,7 @@ export class DashboardService {
     ] = await Promise.all([
       this.prisma.user.count({ where: { role: 'EMPLOYEE' } }),
 
-      this.prisma.project.count({ where: { status: 'ACTIVE' } }),
+      this.prisma.project.count({ where: { status: 'IN_PROGRESS' } }),
 
       this.prisma.attendance.findMany({
         where: { date: { gte: today, lt: tomorrow } },

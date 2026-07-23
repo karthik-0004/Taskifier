@@ -12,9 +12,29 @@ enum Role {
 }
 
 enum ProjectStatus {
-  ACTIVE
-  PAUSED
+  PLANNING
+  NOT_STARTED
+  IN_PROGRESS
+  ON_HOLD
   COMPLETED
+  CANCELLED
+}
+
+enum ProjectPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum ProjectCategory {
+  WEB_APPLICATION
+  MOBILE_APP
+  AI_ML
+  DEVOPS
+  DATABASE
+  CLOUD
+  OTHER
 }
 
 enum SessionSource {
@@ -48,33 +68,66 @@ model User {
   githubUsername String?
   resetToken    String?
   resetTokenExpiry DateTime?
+  skills        String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  projectAssignments ProjectAssignment[]
-  githubConnection   GithubConnection?
-  workSessions       WorkSession[]
-  dailySummaries     DailySummary[]
-  weeklyReports      WeeklyReport[]
-  attendance         Attendance[]
+  projectAssignments   ProjectAssignment[]
+  managedProjects      Project[]           @relation("ProjectManager")
+  leadProjects         Project[]           @relation("TeamLead")
+  createdProjects      Project[]           @relation("ProjectCreator")
+  githubConnection     GithubConnection?
+  workSessions         WorkSession[]
+  dailySummaries       DailySummary[]
+  weeklyReports        WeeklyReport[]
+  attendance           Attendance[]
 }
 
 model Project {
   id          String        @id @default(uuid())
   name        String
+  code        String        @unique
   description String?
-  status      ProjectStatus
-  createdAt   DateTime      @default(now())
+  category    ProjectCategory?
+  clientName  String?
+
+  startDate       DateTime?
+  expectedEndDate DateTime?
+  priority        ProjectPriority?
+  status          ProjectStatus     @default(NOT_STARTED)
+
+  projectManagerId String?
+  projectManager   User?  @relation("ProjectManager", fields: [projectManagerId], references: [id], onDelete: SetNull)
+  teamLeadId       String?
+  teamLead         User?  @relation("TeamLead", fields: [teamLeadId], references: [id], onDelete: SetNull)
+  maxTeamSize      Int?
+
+  estimatedDuration Int?
+  budget           Float?
+  techStack        String?
+  requiredSkills   String?
+  repoUrl          String?
+  docsUrl          String?
+  tags             String?
+
+  managerId String
+  manager   User   @relation("ProjectCreator", fields: [managerId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   assignments ProjectAssignment[]
   workSessions WorkSession[]
 }
 
 model ProjectAssignment {
-  id        String @id @default(uuid())
-  userId    String
-  projectId String
+  id          String   @id @default(uuid())
+  userId      String
+  projectId   String
+  role        String   @default("OTHER")
+  workload    Int?
+  joiningDate DateTime?
 
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)

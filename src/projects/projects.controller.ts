@@ -11,7 +11,7 @@ import {
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { ProjectsService } from './projects.service';
-import { CreateProjectDto, UpdateProjectDto, AssignEmployeeDto } from './dto';
+import { CreateProjectDto, UpdateProjectDto, AssignEmployeeDto, RecommendSkillsDto } from './dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -35,8 +35,8 @@ export class ProjectsController {
 
   @Roles('MANAGER')
   @Post()
-  create(@Body() dto: CreateProjectDto) {
-    return this.projectsService.create(dto);
+  create(@Request() req: any, @Body() dto: CreateProjectDto) {
+    return this.projectsService.create(dto, req.user.id);
   }
 
   @Roles('MANAGER')
@@ -51,7 +51,17 @@ export class ProjectsController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: AssignEmployeeDto,
   ) {
-    return this.projectsService.assignEmployee(id, dto.employeeId);
+    return this.projectsService.assignEmployee(id, dto);
+  }
+
+  @Roles('MANAGER')
+  @Patch(':id/assign/:employeeId')
+  updateAssignment(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('employeeId', ParseUUIDPipe) employeeId: string,
+    @Body() dto: { role?: string; workload?: number; joiningDate?: string },
+  ) {
+    return this.projectsService.updateAssignment(id, employeeId, dto);
   }
 
   @Roles('MANAGER')
@@ -61,6 +71,12 @@ export class ProjectsController {
     @Param('employeeId', ParseUUIDPipe) employeeId: string,
   ) {
     return this.projectsService.unassignEmployee(id, employeeId);
+  }
+
+  @Roles('MANAGER')
+  @Post('recommend-skills')
+  recommendSkills(@Body() dto: RecommendSkillsDto) {
+    return this.projectsService.recommendSkills(dto.description);
   }
 
   @Roles('MANAGER')
