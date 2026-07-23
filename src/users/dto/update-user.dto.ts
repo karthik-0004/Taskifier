@@ -13,5 +13,14 @@ export class UpdateUserDto {
   name?: string;
 
   @IsOptional()
+  phoneNumber?: string;
+
+  @IsOptional()
+  position?: string;
+
+  @IsOptional()
+  profilePicture?: string;
+
+  @IsOptional()
   githubUsername?: string;
 }

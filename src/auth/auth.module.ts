@@ -7,6 +7,7 @@ import { PasswordService } from './password.service';
 import { JwtStrategy } from './jwt.strategy';
 import { GithubOauthController } from './github-oauth.controller';
 import { GithubOauthService } from './github-oauth.service';
+import { EmailModule } from '../email/email.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { GithubOauthService } from './github-oauth.service';
         signOptions: { expiresIn: '15m' },
       }),
     }),
+    EmailModule,
   ],
   controllers: [AuthController, GithubOauthController],
   providers: [AuthService, PasswordService, JwtStrategy, GithubOauthService],

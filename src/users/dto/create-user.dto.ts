@@ -12,5 +12,11 @@ export class CreateUserDto {
   name: string;
 
   @IsOptional()
+  phoneNumber?: string;
+
+  @IsOptional()
+  position?: string;
+
+  @IsOptional()
   githubUsername?: string;
 }

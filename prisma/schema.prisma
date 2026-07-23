@@ -41,8 +41,13 @@ model User {
   email         String   @unique
   passwordHash  String
   name          String
+  phoneNumber   String?
+  position      String?
+  profilePicture String?
   role          Role
   githubUsername String?
+  resetToken    String?
+  resetTokenExpiry DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -51,6 +51,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setHydrated(true)
   }, [])
 
+  useEffect(() => {
+    const handleLogout = () => {
+      setUser(null)
+      setAccessToken(null)
+    }
+    window.addEventListener("auth:logout", handleLogout)
+    return () => window.removeEventListener("auth:logout", handleLogout)
+  }, [])
+
   const login = useCallback(async (email: string, password: string) => {
     setIsLoading(true)
     setUser(null)

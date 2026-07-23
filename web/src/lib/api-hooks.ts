@@ -7,6 +7,9 @@ export interface UserDTO {
   id: string
   email: string
   name: string
+  phoneNumber: string | null
+  position: string | null
+  profilePicture: string | null
   role: string
   githubUsername: string | null
   createdAt: string
@@ -219,10 +222,44 @@ export function useUsers() {
   return useFetch<UserDTO[]>(() => api<UserDTO[]>("/users"))
 }
 
-export function createUser(name: string, email: string, password: string) {
+export function createUser(name: string, email: string, password: string, phoneNumber?: string, position?: string) {
   return api<UserDTO>("/users", {
     method: "POST",
-    body: JSON.stringify({ name, email, password }),
+    body: JSON.stringify({ name, email, password, phoneNumber, position }),
+  })
+}
+
+export function deleteUser(id: string) {
+  return api(`/users/${id}`, { method: "DELETE" })
+}
+
+export function updateProfile(data: { name?: string; phoneNumber?: string; position?: string; profilePicture?: string }) {
+  return api<UserDTO>("/users/me", {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  })
+}
+
+export function changePassword(currentPassword: string, newPassword: string) {
+  return api("/auth/change-password", {
+    method: "POST",
+    body: JSON.stringify({ currentPassword, newPassword }),
+  })
+}
+
+export function forgotPassword(email: string) {
+  return api("/auth/forgot-password", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+    skipAuth: true,
+  })
+}
+
+export function resetPassword(token: string, newPassword: string) {
+  return api("/auth/reset-password", {
+    method: "POST",
+    body: JSON.stringify({ token, newPassword }),
+    skipAuth: true,
   })
 }
 

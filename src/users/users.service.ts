@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { PasswordService } from '../auth/password.service';
+import { EmailService } from '../email/email.service';
 import { CreateUserDto, UpdateUserDto } from './dto';
 import { Role } from '@prisma/client';
 
@@ -8,6 +9,9 @@ const userSelect = {
   id: true,
   email: true,
   name: true,
+  phoneNumber: true,
+  position: true,
+  profilePicture: true,
   role: true,
   githubUsername: true,
   createdAt: true,
@@ -19,21 +23,28 @@ export class UsersService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly passwordService: PasswordService,
+    private readonly emailService: EmailService,
   ) {}
 
   async create(dto: CreateUserDto) {
     const passwordHash = await this.passwordService.hash(dto.password);
 
-    return this.prisma.user.create({
+    const user = await this.prisma.user.create({
       data: {
         email: dto.email,
         passwordHash,
         name: dto.name,
+        phoneNumber: dto.phoneNumber,
+        position: dto.position,
         role: Role.EMPLOYEE,
         githubUsername: dto.githubUsername,
       },
       select: userSelect,
     });
+
+    await this.emailService.sendWelcomeEmail(user.email, user.name, dto.password);
+
+    return user;
   }
 
   findAll() {
@@ -66,10 +77,31 @@ export class UsersService {
     const data: any = {};
     if (dto.email !== undefined) data.email = dto.email;
     if (dto.name !== undefined) data.name = dto.name;
+    if (dto.phoneNumber !== undefined) data.phoneNumber = dto.phoneNumber;
+    if (dto.position !== undefined) data.position = dto.position;
     if (dto.githubUsername !== undefined) data.githubUsername = dto.githubUsername;
     if (dto.password) {
       data.passwordHash = await this.passwordService.hash(dto.password);
     }
+
+    return this.prisma.user.update({
+      where: { id },
+      data,
+      select: userSelect,
+    });
+  }
+
+  async updateProfile(id: string, dto: { name?: string; phoneNumber?: string; position?: string; profilePicture?: string }) {
+    const existing = await this.prisma.user.findUnique({ where: { id } });
+    if (!existing) {
+      throw new NotFoundException('User not found');
+    }
+
+    const data: any = {};
+    if (dto.name !== undefined) data.name = dto.name;
+    if (dto.phoneNumber !== undefined) data.phoneNumber = dto.phoneNumber;
+    if (dto.position !== undefined) data.position = dto.position;
+    if (dto.profilePicture !== undefined) data.profilePicture = dto.profilePicture;
 
     return this.prisma.user.update({
       where: { id },

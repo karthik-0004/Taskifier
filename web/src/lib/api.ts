@@ -20,6 +20,10 @@ function setTokens(accessToken: string, refreshToken: string) {
 function clearTokens() {
   localStorage.removeItem("accessToken")
   localStorage.removeItem("refreshToken")
+  localStorage.removeItem("user")
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event("auth:logout"))
+  }
 }
 
 async function refreshAccessToken(): Promise<string | null> {

@@ -2,6 +2,7 @@
 
 import { type FormEvent, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 import { motion } from "framer-motion"
 import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
@@ -156,9 +157,17 @@ export default function LoginPage() {
               transition={{ duration: 0.4, delay: 0.45 }}
               className="space-y-1.5"
             >
-              <label htmlFor="password" className="text-body-sm font-medium">
-                Password
-              </label>
+              <div className="flex items-center justify-between">
+                <label htmlFor="password" className="text-body-sm font-medium">
+                  Password
+                </label>
+                <Link
+                  href="/forgot-password"
+                  className="text-caption text-accent hover:text-accent/80 transition-colors"
+                >
+                  Forgot password?
+                </Link>
+              </div>
               <Input
                 id="password"
                 type="password"
@@ -229,7 +238,7 @@ export default function LoginPage() {
             transition={{ duration: 0.5, delay: 0.7 }}
             className="mt-8 text-center text-caption text-muted-foreground"
           >
-            Test accounts: <strong>manager@taskifier.dev</strong> / <strong>password123</strong>
+            Manager: <strong>manager@taskifier.dev</strong> / <strong>password123</strong>
           </motion.p>
         </motion.div>
       </div>
