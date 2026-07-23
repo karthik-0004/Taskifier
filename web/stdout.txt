@@ -1,0 +1,8 @@
+  ▲ Next.js 14.2.35
+  - Local:        http://localhost:3001
+
+ ✓ Starting...
+ ✓ Ready in 3s
+ ○ Compiling /style-guide ...
+ ✓ Compiled /style-guide in 4.3s (573 modules)
+ GET /style-guide 500 in 4610ms

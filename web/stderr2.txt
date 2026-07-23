@@ -1,0 +1,4 @@
+ ⨯ Error: Invalid src prop (https://api.dicebear.com/9.x/avataaars/svg?seed=test) on `next/image`, hostname "api.dicebear.com" is not configured under images in your `next.config.js`
+See more info: https://nextjs.org/docs/messages/next-image-unconfigured-host
+    at Array.map (<anonymous>)
+digest: "3581436856"

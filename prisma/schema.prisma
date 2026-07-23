@@ -1,0 +1,151 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  MANAGER
+  EMPLOYEE
+}
+
+enum ProjectStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+}
+
+enum SessionSource {
+  VSCODE
+  CURSOR
+  OTHER
+}
+
+enum ActivityType {
+  COMMIT
+  BRANCH_SWITCH
+  PR_OPENED
+  FILE_EDIT
+}
+
+enum SummaryStatus {
+  DRAFT
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  passwordHash  String
+  name          String
+  role          Role
+  githubUsername String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  projectAssignments ProjectAssignment[]
+  githubConnection   GithubConnection?
+  workSessions       WorkSession[]
+  dailySummaries     DailySummary[]
+  weeklyReports      WeeklyReport[]
+  attendance         Attendance[]
+}
+
+model Project {
+  id          String        @id @default(uuid())
+  name        String
+  description String?
+  status      ProjectStatus
+  createdAt   DateTime      @default(now())
+
+  assignments ProjectAssignment[]
+  workSessions WorkSession[]
+}
+
+model ProjectAssignment {
+  id        String @id @default(uuid())
+  userId    String
+  projectId String
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, projectId])
+}
+
+model GithubConnection {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  accessToken   String
+  githubUsername String
+  connectedAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model WorkSession {
+  id        String        @id @default(uuid())
+  userId    String
+  projectId String?
+  startedAt DateTime
+  endedAt   DateTime?
+  source    SessionSource
+
+  user    User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+
+  activityEvents ActivityEvent[]
+}
+
+model ActivityEvent {
+  id        String       @id @default(uuid())
+  sessionId String
+  type      ActivityType
+  payload   Json
+  timestamp DateTime     @default(now())
+
+  session WorkSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+}
+
+model DailySummary {
+  id                 String        @id @default(uuid())
+  userId             String
+  date               DateTime
+  aiGeneratedContent String
+  editedContent      String?
+  status             SummaryStatus
+  approvedAt         DateTime?
+  createdAt          DateTime      @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+}
+
+model WeeklyReport {
+  id          String   @id @default(uuid())
+  userId      String
+  weekStart   DateTime
+  content     String
+  generatedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, weekStart])
+}
+
+model Attendance {
+  id         String    @id @default(uuid())
+  userId     String
+  date       DateTime
+  checkInAt  DateTime?
+  checkOutAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+}
