@@ -6,6 +6,7 @@ import { authState } from './auth/authState';
 import { statusBarManager } from './statusBar/statusBarManager';
 import { loginCommand } from './commands/login';
 import { statusCommand } from './commands/status';
+import { logoutCommand } from './commands/logout';
 
 export async function activate(context: vscode.ExtensionContext) {
     initializeLogger();
@@ -41,12 +42,16 @@ export async function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('taskifier.status', statusCommand)
     );
 
+    // Register logout command specifically
+    context.subscriptions.push(
+        vscode.commands.registerCommand('taskifier.logout', logoutCommand)
+    );
+
     const placeholders = [
         'start',
         'checkout',
         'update',
-        'summary',
-        'logout'
+        'summary'
     ];
 
     placeholders.forEach(cmd => {

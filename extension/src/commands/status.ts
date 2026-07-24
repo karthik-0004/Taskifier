@@ -27,8 +27,14 @@ export async function statusCommand() {
             // Extract project name safely
             const project = activeSession ? (activeSession.project?.name || activeSession.projectName || "Unknown Project") : "None";
             
-            const today = new Date().toISOString().split('T')[0];
-            const todayEntry = attendance.find((a: any) => a.date && a.date.startsWith(today));
+            const todayDate = new Date();
+            const todayEntry = attendance.find((a: any) => {
+                if (!a.date) return false;
+                const d = new Date(a.date);
+                return d.getDate() === todayDate.getDate() && 
+                       d.getMonth() === todayDate.getMonth() && 
+                       d.getFullYear() === todayDate.getFullYear();
+            });
             let attendanceStatus = "Not checked in today";
             if (todayEntry) {
                 if (todayEntry.checkInAt && !todayEntry.checkOutAt) attendanceStatus = "Checked In";

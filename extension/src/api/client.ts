@@ -2,42 +2,58 @@ import { getApiUrl } from '../utils/config';
 import { log } from '../utils/logger';
 import { authState } from '../auth/authState';
 import { secretStore } from '../auth/secretStore';
+import * as vscode from 'vscode';
+import { statusBarManager } from '../statusBar/statusBarManager';
+
+let refreshPromise: Promise<boolean> | null = null;
 
 export class ApiClient {
     private static async refreshAccessToken(): Promise<boolean> {
-        if (!authState.tokens?.refreshToken) return false;
+        const tokens = authState.tokens;
+        if (!tokens?.refreshToken) return false;
         
-        try {
-            const url = `${getApiUrl()}/auth/refresh`;
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ refreshToken: authState.tokens.refreshToken })
-            });
+        if (refreshPromise) {
+            return refreshPromise;
+        }
 
-            if (!response.ok) {
+        refreshPromise = (async () => {
+            try {
+                const url = `${getApiUrl()}/auth/refresh`;
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ refreshToken: tokens.refreshToken })
+                });
+
+                if (!response.ok) {
+                    await secretStore.clearTokens();
+                    await authState.refreshFromStorage();
+                    return false;
+                }
+
+                const text = await response.text();
+                const data = text ? JSON.parse(text) : null;
+                
+                await secretStore.storeTokens(
+                    data.accessToken,
+                    data.refreshToken || tokens.refreshToken,
+                    tokens.employeeId,
+                    tokens.organizationId,
+                    tokens.employee
+                );
+                
+                await authState.refreshFromStorage();
+                return true;
+            } catch (e) {
                 await secretStore.clearTokens();
                 await authState.refreshFromStorage();
                 return false;
+            } finally {
+                refreshPromise = null;
             }
+        })();
 
-            const data = await response.json();
-            
-            await secretStore.storeTokens(
-                data.accessToken,
-                data.refreshToken || authState.tokens.refreshToken,
-                authState.tokens.employeeId,
-                authState.tokens.organizationId,
-                authState.tokens.employee
-            );
-            
-            await authState.refreshFromStorage();
-            return true;
-        } catch (e) {
-            await secretStore.clearTokens();
-            await authState.refreshFromStorage();
-            return false;
-        }
+        return refreshPromise;
     }
 
     private static async request<T>(endpoint: string, options: RequestInit = {}, isRetry = false): Promise<T> {
@@ -65,19 +81,28 @@ export class ApiClient {
                     headers['Authorization'] = `Bearer ${authState.tokens?.accessToken}`;
                     response = await fetch(url, { ...options, headers });
                 } else {
+                    vscode.window.showInformationMessage("Your Taskifier session expired. Run 'Taskifier: Login' to reconnect.");
+                    await statusBarManager.refresh();
                     throw new Error('Session expired. Please log in again.');
                 }
             }
             
-            const data = await response.json();
+            if (response.status === 204) return null as unknown as T;
+            
+            const text = await response.text();
             
             if (!response.ok) {
-                // Surface the backend's explicit error message instead of generic failure
-                const message = data.message || data.error || `HTTP ${response.status}: ${response.statusText}`;
+                let message = `HTTP ${response.status}: ${response.statusText}`;
+                try {
+                    const parsed = text ? JSON.parse(text) : {};
+                    message = parsed.message || parsed.error || message;
+                } catch (e) {
+                    message = text || message;
+                }
                 throw new Error(message);
             }
             
-            return data as T;
+            return (text ? JSON.parse(text) : null) as T;
         } catch (error: any) {
             log(`API Error [${endpoint}]: ${error.message}`);
             throw error;
@@ -93,14 +118,13 @@ export class ApiClient {
 
     public static async getStatus() {
         try {
-            // Note: If /sessions/active throws a 404 (no active session), we catch and return null.
             const [me, activeSession, attendance] = await Promise.all([
                 this.request<any>('/users/me'),
-                this.request<any>('/sessions/active').catch(() => null),
-                this.request<any[]>('/attendance/me').catch(() => [])
+                this.request<any>('/sessions/active'),
+                this.request<any[]>('/attendance/me')
             ]);
             
-            return { me, activeSession, attendance };
+            return { me, activeSession, attendance: attendance || [] };
         } catch (error: any) {
             log(`Failed to fetch status: ${error.message}`);
             throw error;
