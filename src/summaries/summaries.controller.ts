@@ -32,6 +32,15 @@ export class SummariesController {
   }
 
   @Roles('MANAGER', 'EMPLOYEE')
+  @Post('manual')
+  createManual(@Req() req: any, @Body('content') content: string, @Query('date') date: string) {
+    if (!date) {
+      date = new Date().toISOString().slice(0, 10);
+    }
+    return this.summariesService.createManual(req.user.id, date, content);
+  }
+
+  @Roles('MANAGER', 'EMPLOYEE')
   @Get('mine')
   mine(@Req() req: any) {
     return this.summariesService.findMine(req.user.id);

@@ -44,6 +44,36 @@ export class SummariesService {
     return summary;
   }
 
+  async createManual(userId: string, dateStr: string, content: string) {
+    const date = new Date(dateStr + 'T00:00:00.000Z');
+
+    const existing = await this.prisma.dailySummary.findUnique({
+      where: { userId_date: { userId, date } },
+      select: { status: true },
+    });
+
+    if (existing && existing.status !== 'DRAFT') {
+      throw new ConflictException(
+        `Cannot recreate: summary for ${dateStr} is already ${existing.status.toLowerCase()}`,
+      );
+    }
+
+    const summary = await this.prisma.dailySummary.upsert({
+      where: { userId_date: { userId, date } },
+      update: { editedContent: content, status: 'APPROVED', approvedAt: new Date() },
+      create: {
+        userId,
+        date,
+        editedContent: content,
+        aiGeneratedContent: 'Manual Entry',
+        status: 'APPROVED',
+        approvedAt: new Date(),
+      },
+    });
+
+    return summary;
+  }
+
   async findMine(userId: string) {
     return this.prisma.dailySummary.findMany({
       where: { userId },

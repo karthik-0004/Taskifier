@@ -10,6 +10,7 @@ import {
   Link2,
   CalendarCheck,
   Settings,
+  User
 } from "lucide-react"
 import { RouteGuard } from "@/lib/route-guard"
 import { useAuth } from "@/lib/auth-context"
@@ -19,10 +20,9 @@ const employeeNav: NavItem[] = [
   { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard size={18} />, href: "/employee/dashboard" },
   { id: "my-projects", label: "My Projects", icon: <Briefcase size={18} />, href: "/employee/my-projects" },
   { id: "daily-summary", label: "Daily Summary", icon: <FileEdit size={18} />, href: "/employee/daily-summary" },
-  { id: "history", label: "History", icon: <Clock size={18} />, href: "/employee/history" },
   { id: "connections", label: "Connections", icon: <Link2 size={18} />, href: "/employee/connections" },
   { id: "attendance", label: "Attendance", icon: <CalendarCheck size={18} />, href: "/employee/attendance" },
-  { id: "settings", label: "Settings", icon: <Settings size={18} />, href: "/employee/settings" },
+  { id: "profile", label: "Profile", icon: <User size={18} />, href: "/employee/profile" },
 ]
 
 const navIdFromPath = new Map<string, string>(

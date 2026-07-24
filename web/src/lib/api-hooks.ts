@@ -502,6 +502,14 @@ export function generateSummary(date?: string) {
   return api<DailySummaryDTO>(`/summaries/generate${qs}`, { method: "POST" })
 }
 
+export function createManualSummary(content: string, date?: string) {
+  const qs = date ? `?date=${date}` : ""
+  return api<DailySummaryDTO>(`/summaries/manual${qs}`, { 
+    method: "POST",
+    body: JSON.stringify({ content })
+  })
+}
+
 export function editSummary(id: string, editedContent: string) {
   return api<DailySummaryDTO>(`/summaries/${id}`, {
     method: "PATCH",

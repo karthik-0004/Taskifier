@@ -15,58 +15,50 @@ import {
   FileEdit,
   CheckCircle2,
   LogIn,
+  LogOut,
+  Calendar as CalendarIcon,
+  Briefcase,
+  Users,
+  Activity,
+  ArrowRight
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Select } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { HorizontalScroller } from "@/components/horizontal-scroller"
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
+import {
+  Tooltip
+} from "@/components/ui/tooltip"
 import { useToast } from "@/components/ui/toast"
 import {
   useMyActiveSession,
   useMyAttendance,
   useMySummaries,
-  useSessionActivity,
   useMyProjects,
   startSession,
   endSession,
   checkIn,
-  type ActivityEventDTO,
+  checkOut,
 } from "@/lib/api-hooks"
 
-type PageState = "check_in" | "start_work" | "in_session"
-
-function formatElapsed(seconds: number): string {
-  const h = Math.floor(seconds / 3600)
-  const m = Math.floor((seconds % 3600) / 60)
-  const s = seconds % 60
-  if (h > 0) return `${h}h ${m}m ${s}s`
-  if (m > 0) return `${m}m ${s}s`
-  return `${s}s`
-}
-
-function activityIcon(type: string) {
-  switch (type) {
-    case "COMMIT":
-      return <GitCommit size={14} />
-    case "BRANCH_SWITCH":
-      return <GitBranch size={14} />
-    case "PR_OPENED":
-      return <GitPullRequest size={14} />
-    case "FILE_EDIT":
-      return <Eye size={14} />
-    default:
-      return <Eye size={14} />
-  }
-}
-
-function formatActivityTime(iso: string): string {
-  const d = new Date(iso)
-  return d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false })
+function formatHoursAndMinutes(ms: number): string {
+  if (ms <= 0) return "—"
+  const h = Math.floor(ms / 3600000)
+  const m = Math.floor((ms % 3600000) / 60000)
+  return `${h}h ${m}m`
 }
 
 function todayDateStr(): string {
-  return new Date().toISOString().slice(0, 10)
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
+
+function getGreeting(): string {
+  const hour = new Date().getHours()
+  if (hour < 12) return "Good Morning"
+  if (hour < 17) return "Good Afternoon"
+  return "Good Evening"
 }
 
 export default function EmployeeDashboard() {
@@ -74,301 +66,327 @@ export default function EmployeeDashboard() {
   const router = useRouter()
   const { toast } = useToast()
 
-  const { data: activeSession, loading: sessionLoading, refresh: refreshSession } = useMyActiveSession()
   const { data: attendanceData, loading: attLoading, refresh: refreshAttendance } = useMyAttendance()
-  const { data: summariesData, loading: summariesLoading } = useMySummaries()
-  const { data: projectsData } = useMyProjects()
-  const { data: activityData } = useSessionActivity(activeSession?.id ?? null)
+  const { data: projectsData, loading: projectsLoading } = useMyProjects()
 
-  const [checkedIn, setCheckedIn] = useState(false)
-  const [session, setSession] = useState<typeof activeSession>(null)
-  const [showProjectSelect, setShowProjectSelect] = useState(false)
-  const [selectedProject, setSelectedProject] = useState("")
-  const [elapsedSeconds, setElapsedSeconds] = useState(0)
+  const [todayAttendance, setTodayAttendance] = useState<any>(null)
+  const [yesterdayDetails, setYesterdayDetails] = useState<any>(null)
 
   useEffect(() => {
     if (!attLoading && attendanceData) {
-      const todayRec = attendanceData.find((a) => a.date?.slice(0, 10) === todayDateStr())
-      setCheckedIn(!!todayRec?.checkInAt)
+      const todayRec = attendanceData.find((a: any) => {
+        if (!a.date) return false
+        const d = new Date(a.date)
+        const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+        return dateKey === todayDateStr()
+      })
+      setTodayAttendance(todayRec || null)
     }
   }, [attendanceData, attLoading])
 
   useEffect(() => {
-    setSession(activeSession)
-  }, [activeSession])
+    if (!user?.id) return
+    const d = new Date()
+    d.setDate(d.getDate() - 1)
+    const yestStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    
+    fetch(`/api/employees/${user.id}/daily-summary?date=${yestStr}`)
+      .then(res => {
+        if (res.ok) return res.json()
+        return null
+      })
+      .then(data => {
+        if (data) setYesterdayDetails(data)
+      })
+      .catch(() => {})
+  }, [user?.id])
 
-  useEffect(() => {
-    if (session) {
-      const diff = Math.floor((Date.now() - new Date(session.startedAt).getTime()) / 1000)
-      setElapsedSeconds(Math.max(0, diff))
-      const interval = setInterval(() => {
-        setElapsedSeconds((prev) => prev + 1)
-      }, 1000)
-      return () => clearInterval(interval)
-    }
-  }, [session])
-
-  const loading = sessionLoading || attLoading || summariesLoading
-
-  const todaySummary = (summariesData ?? []).find((s) => s.date?.slice(0, 10) === todayDateStr())
-
-  const projects = projectsData ?? []
-  const empId = user?.id
-  const assignedProjects = projects.filter((p) =>
-    p.assignments.some((a) => a.userId === empId),
-  )
-
-  const activity: ActivityEventDTO[] = activityData ?? []
-
-  const state: PageState = !checkedIn ? "check_in" : !session ? "start_work" : "in_session"
-
-  function handleCheckIn() {
+  const handleCheckIn = () => {
     checkIn()
       .then(() => {
-        setCheckedIn(true)
         refreshAttendance()
-        toast("Checked in at " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }), "success")
+        toast("Checked in successfully", "success")
       })
       .catch((err) => toast(err.message, "error"))
   }
 
-  function handleStartWork() {
-    if (!selectedProject) return
-    const project = projects.find((p) => p.id === selectedProject)
-    if (!project) return
-    startSession(project.id)
-      .then((newSession) => {
-        setSession(newSession)
-        setShowProjectSelect(false)
-        setSelectedProject("")
-        refreshSession()
-        toast(`Started working on ${project.name}`, "success")
-      })
-      .catch((err) => toast(err.message, "error"))
-  }
-
-  const handleEndSession = useCallback(() => {
-    if (!session) return
-    const duration = formatElapsed(elapsedSeconds)
-    endSession(session.id)
+  const handleCheckOut = () => {
+    checkOut()
       .then(() => {
-        setSession(null)
-        setElapsedSeconds(0)
-        refreshSession()
-        toast(`Session ended — ${duration} logged`, "info")
+        refreshAttendance()
+        toast("Checked out successfully. Have a great evening!", "success")
       })
       .catch((err) => toast(err.message, "error"))
-  }, [session, elapsedSeconds, toast, refreshSession])
+  }
 
-  if (loading && !session) {
+  const isAfter4PM = new Date().getHours() >= 16
+
+  const projects = projectsData ?? []
+  const assignedProjects = projects.filter((p) =>
+    p.assignments.some((a) => a.userId === user?.id),
+  )
+
+  const loading = attLoading || projectsLoading
+
+  if (loading) {
     return (
-      <div className="max-w-3xl space-y-8">
+      <div className="space-y-8">
         <div>
           <Skeleton variant="text" className="h-8 w-72" />
           <Skeleton variant="text" className="h-4 w-96 mt-2" />
         </div>
         <Skeleton variant="rectangular" className="h-32 w-full" />
-        <div>
-          <Skeleton variant="text" className="h-6 w-40 mb-4" />
-          <Skeleton variant="rectangular" className="h-24 w-full" />
-        </div>
-        <Skeleton variant="rectangular" className="h-24 w-full" />
       </div>
     )
   }
 
+  const formatTimeLocal = (iso: string) => {
+    return new Date(iso).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+  }
+
+  let currentStatus = "Not Checked In"
+  let workingHours = "—"
+  
+  if (todayAttendance?.checkInAt) {
+    if (todayAttendance?.checkOutAt) {
+      currentStatus = "Checked Out"
+      const diff = new Date(todayAttendance.checkOutAt).getTime() - new Date(todayAttendance.checkInAt).getTime()
+      workingHours = formatHoursAndMinutes(diff)
+    } else {
+      currentStatus = "Active (Working)"
+      const diff = Date.now() - new Date(todayAttendance.checkInAt).getTime()
+      workingHours = formatHoursAndMinutes(diff)
+    }
+  }
+
   return (
-    <div className="max-w-3xl space-y-8">
+    <div className="space-y-8 pb-10">
+      {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35 }}
       >
-        <h1 className="text-h1">Good afternoon, {user?.name?.split(" ")[0]}</h1>
-        <p className="text-body-sm text-muted-foreground mt-1">
-          {state === "check_in"
-            ? "You haven&rsquo;t checked in yet today."
-            : state === "start_work"
-              ? "Checked in — ready to start working?"
-              : `Working on ${session?.project?.name ?? "a project"}`}
+        <h1 className="text-3xl font-semibold tracking-tight">{getGreeting()}, {user?.name?.split(" ")[0]}</h1>
+        <p className="text-muted-foreground mt-1 flex items-center gap-2">
+          <CalendarIcon size={16} />
+          {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
         </p>
       </motion.div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.1 }}
-        className="rounded-xl border bg-card p-6 shadow-soft"
-      >
-        {state === "check_in" && (
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <h2 className="text-h3">Start your day</h2>
-              <p className="text-body-sm text-muted-foreground">
-                Check in to begin tracking your time and activity.
-              </p>
+      {/* Attendance & Yesterday Activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        {/* Attendance Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.1 }}
+        >
+          <Card className="h-full border-border/50 shadow-sm flex flex-col relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-8 opacity-5">
+              <Clock size={120} />
             </div>
-            <Button variant="accent" size="lg" onClick={handleCheckIn}>
-              <LogIn size={16} />
-              Check In
-            </Button>
-          </div>
-        )}
-
-        {state === "start_work" && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <h2 className="text-h3">Start a work session</h2>
-                <p className="text-body-sm text-muted-foreground">
-                  Pick a project and start tracking.
-                </p>
+            <CardHeader className="pb-4 border-b bg-muted/20">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Clock size={18} className="text-primary" /> Today's Attendance
+                </CardTitle>
+                <Badge variant={currentStatus === "Active (Working)" ? "success" : "secondary"}>
+                  {currentStatus}
+                </Badge>
               </div>
-              <Badge variant="success" className="gap-1.5">
-                <CheckCircle2 size={12} />
-                Checked in
-              </Badge>
-            </div>
-            {showProjectSelect ? (
-              <div className="flex items-center gap-3">
-                <div className="flex-1">
-                  <Select
-                    value={selectedProject}
-                    onChange={(e) => setSelectedProject(e.target.value)}
-                    placeholder="Select a project"
-                  >
-                    {assignedProjects.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </Select>
-                </div>
-                <Button onClick={handleStartWork} disabled={!selectedProject}>
-                  <Play size={14} />
-                  Start
-                </Button>
-                <Button variant="ghost" onClick={() => setShowProjectSelect(false)}>
-                  Cancel
-                </Button>
-              </div>
-            ) : (
-              <Button variant="primary" onClick={() => setShowProjectSelect(true)}>
-                <Play size={16} />
-                Start Work
-              </Button>
-            )}
-          </div>
-        )}
-
-        {state === "in_session" && session && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <h2 className="text-h3">Active session</h2>
-                <p className="text-body-sm text-muted-foreground">
-                  {session.project?.name ?? "No project"}
-                </p>
-              </div>
-              <Badge variant="success" className="gap-1.5">
-                <CheckCircle2 size={12} />
-                Checked in
-              </Badge>
-            </div>
-            <div className="flex items-center justify-between rounded-xl bg-accent/5 border border-accent/10 px-5 py-4">
-              <div className="flex items-center gap-4">
-                <div className="flex items-center justify-center size-12 rounded-xl bg-accent/10 text-accent">
-                  <Clock size={22} />
+            </CardHeader>
+            <CardContent className="pt-6 flex-1 flex flex-col justify-between">
+              <div className="grid grid-cols-3 gap-4 mb-8">
+                <div>
+                  <p className="text-xs text-muted-foreground font-medium mb-1 uppercase tracking-wider">Check In</p>
+                  <p className="text-xl font-semibold">
+                    {todayAttendance?.checkInAt ? formatTimeLocal(todayAttendance.checkInAt) : "—"}
+                  </p>
                 </div>
                 <div>
-                  <p className="text-h2 font-semibold tabular-nums tracking-tight text-accent">
-                    {formatElapsed(elapsedSeconds)}
+                  <p className="text-xs text-muted-foreground font-medium mb-1 uppercase tracking-wider">Check Out</p>
+                  <p className="text-xl font-semibold">
+                    {todayAttendance?.checkOutAt ? formatTimeLocal(todayAttendance.checkOutAt) : "—"}
                   </p>
-                  <p className="text-caption text-muted-foreground">elapsed</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground font-medium mb-1 uppercase tracking-wider">Working Hours</p>
+                  <p className="text-xl font-semibold text-primary">{workingHours}</p>
                 </div>
               </div>
-              <Button variant="destructive" size="sm" onClick={handleEndSession}>
-                <Square size={14} />
-                End Session
-              </Button>
-            </div>
-          </div>
-        )}
-      </motion.div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, delay: 0.2 }}
-      >
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-h3">Today&rsquo;s Activity</h2>
-          {activity.length > 0 && (
-            <span className="text-caption text-muted-foreground">
-              {activity.length} events
-            </span>
-          )}
-        </div>
-        {activity.length === 0 ? (
-          <div className="rounded-xl border border-dashed px-6 py-10 text-center">
-            <p className="text-body-sm text-muted-foreground">
-              No activity recorded yet today.
-            </p>
-          </div>
-        ) : (
-          <HorizontalScroller>
-            {activity.map((event) => (
-              <div
-                key={event.id}
-                className="w-56 shrink-0 rounded-xl border bg-card p-4 shadow-soft"
-              >
-                <div className="flex items-center gap-2 text-caption text-muted-foreground mb-2">
-                  {activityIcon(event.type)}
-                  <span className="capitalize">
-                    {event.type.toLowerCase().replace(/_/g, " ")}
-                  </span>
-                  <span className="ml-auto">{formatActivityTime(event.timestamp)}</span>
-                </div>
-                <p className="text-body-sm leading-snug line-clamp-2">
-                  {event.payload && typeof event.payload === "object" && "message" in event.payload
-                    ? String(event.payload.message)
-                    : JSON.stringify(event.payload)}
-                </p>
-                <p className="text-caption text-muted-foreground mt-2 truncate">
-                  {session?.project?.name ?? ""}
-                </p>
+              <div className="flex items-center gap-3">
+                {!todayAttendance?.checkInAt ? (
+                  <Button className="flex-1 shadow-sm" size="lg" onClick={handleCheckIn}>
+                    <LogIn size={16} className="mr-2" />
+                    Check In
+                  </Button>
+                ) : !todayAttendance?.checkOutAt ? (
+                  <Tooltip content={!isAfter4PM ? "You can check out after 4:00 PM." : null} side="top">
+                    <div className="flex-1 flex">
+                      <Button 
+                        variant="secondary" 
+                        className="flex-1 shadow-sm w-full" 
+                        size="lg" 
+                        disabled={!isAfter4PM}
+                        onClick={handleCheckOut}
+                      >
+                        <LogOut size={16} className="mr-2" />
+                        Check Out
+                      </Button>
+                    </div>
+                  </Tooltip>
+                ) : (
+                  <Button variant="outline" className="flex-1 opacity-50" size="lg" disabled>
+                    <CheckCircle2 size={16} className="mr-2" />
+                    Checked Out
+                  </Button>
+                )}
               </div>
-            ))}
-          </HorizontalScroller>
-        )}
-      </motion.div>
+            </CardContent>
+          </Card>
+        </motion.div>
 
+        {/* Yesterday's Activity */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.2 }}
+        >
+          <Card className="h-full border-border/50 shadow-sm bg-gradient-to-br from-card to-card/50">
+            <CardHeader className="pb-4 border-b bg-muted/20">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Activity size={18} className="text-muted-foreground" /> Yesterday's Activity
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6">
+              {!yesterdayDetails || yesterdayDetails.attendance === "absent" ? (
+                <div className="h-full flex flex-col items-center justify-center text-muted-foreground py-8">
+                  <p className="text-sm">No activity recorded yesterday.</p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  <div className="flex flex-wrap gap-4">
+                    <div className="flex items-center gap-2 text-sm font-medium">
+                      <GitCommit size={16} className="text-emerald-500" />
+                      {yesterdayDetails.commits?.length || 0} commits
+                    </div>
+                    <div className="flex items-center gap-2 text-sm font-medium">
+                      <FileEdit size={16} className="text-blue-500" />
+                      {yesterdayDetails.fileEdits || 0} files edited
+                    </div>
+                    <div className="flex items-center gap-2 text-sm font-medium">
+                      <Clock size={16} className="text-amber-500" />
+                      {yesterdayDetails.workingHours || "—"} worked
+                    </div>
+                  </div>
+
+                  {yesterdayDetails.summary ? (
+                    <div>
+                      <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-2">Summary</p>
+                      <div className="bg-muted/30 p-3 rounded-lg border border-border/50 text-sm leading-relaxed text-foreground/80">
+                        {yesterdayDetails.summary}
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+
+      </div>
+
+      {/* My Projects */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.3 }}
-        className="rounded-xl border bg-card p-5 shadow-soft"
+        className="space-y-4"
       >
-        <div className="flex items-start justify-between gap-4">
-          <div className="space-y-1">
-            <h3 className="text-h3">Daily Summary</h3>
-            <p className="text-body-sm text-muted-foreground">
-              {todaySummary
-                ? todaySummary.status === "APPROVED"
-                  ? "Your summary has been approved."
-                  : "Your summary is ready for review."
-                : "You haven&rsquo;t submitted your daily summary yet."}
-            </p>
-          </div>
-          <Button
-            variant={todaySummary ? "secondary" : "accent"}
-            size="sm"
-            onClick={() => router.push("/employee/daily-summary")}
-          >
-            <FileEdit size={14} />
-            {todaySummary ? "Review" : "Write Summary"}
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold flex items-center gap-2">
+            <Briefcase size={20} className="text-primary" /> Active Projects
+          </h2>
+          <Button variant="ghost" size="sm" onClick={() => router.push("/employee/my-projects")}>
+            View All <ArrowRight size={14} className="ml-1" />
           </Button>
         </div>
+
+        {assignedProjects.length === 0 ? (
+          <div className="rounded-xl border border-dashed px-6 py-12 text-center text-muted-foreground bg-muted/5">
+            <Briefcase size={32} className="mx-auto mb-3 opacity-50" />
+            <p>You are not assigned to any projects currently.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {assignedProjects.map(project => {
+              const myRole = project.assignments.find(a => a.userId === user?.id)?.role || "Member"
+              
+              const start = project.startDate ? new Date(project.startDate) : new Date()
+              const end = project.expectedEndDate ? new Date(project.expectedEndDate) : new Date(start.getTime() + 90 * 24*60*60*1000)
+              const totalDays = Math.max(1, (end.getTime() - start.getTime()) / (1000 * 3600 * 24))
+              const passedDays = Math.max(0, (new Date().getTime() - start.getTime()) / (1000 * 3600 * 24))
+              const progress = Math.min(100, Math.round((passedDays / totalDays) * 100))
+              const daysRemaining = Math.max(0, Math.ceil(totalDays - passedDays))
+
+              return (
+                <Card key={project.id} className="shadow-sm border-border/60 hover:border-primary/30 transition-colors">
+                  <CardHeader className="pb-3 border-b bg-muted/10">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <CardTitle className="text-lg">{project.name}</CardTitle>
+                        <p className="text-sm text-muted-foreground mt-1">{myRole}</p>
+                      </div>
+                      <Badge variant="outline" className="bg-background">{project.status}</Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-4 space-y-5">
+                    
+                    {/* Progress */}
+                    <div>
+                      <div className="flex justify-between text-sm mb-1.5">
+                        <span className="text-muted-foreground font-medium text-xs uppercase tracking-wider">Progress</span>
+                        <span className="font-semibold">{progress}%</span>
+                      </div>
+                      <div className="h-2 bg-muted rounded-full overflow-hidden">
+                        <div className="h-full bg-primary transition-all" style={{ width: `${progress}%` }} />
+                      </div>
+                    </div>
+
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="bg-muted/30 rounded-lg p-2.5 flex flex-col items-center justify-center text-center">
+                        <CalendarIcon size={14} className="text-muted-foreground mb-1" />
+                        <span className="text-xs text-muted-foreground font-medium">Remaining</span>
+                        <span className="text-sm font-semibold">{daysRemaining} d</span>
+                      </div>
+                      <div className="bg-muted/30 rounded-lg p-2.5 flex flex-col items-center justify-center text-center">
+                        <Activity size={14} className="text-muted-foreground mb-1" />
+                        <span className="text-xs text-muted-foreground font-medium">Priority</span>
+                        <span className="text-sm font-semibold">{project.priority || "Normal"}</span>
+                      </div>
+                      <div className="bg-muted/30 rounded-lg p-2.5 flex flex-col items-center justify-center text-center">
+                        <Users size={14} className="text-muted-foreground mb-1" />
+                        <span className="text-xs text-muted-foreground font-medium">Team</span>
+                        <span className="text-sm font-semibold">{project.assignments.length}</span>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex gap-2 pt-2">
+                      <Button size="sm" variant="outline" className="flex-1 text-xs">Open Project</Button>
+                      <Button size="sm" variant="outline" className="flex-1 text-xs">View Team</Button>
+                      <Button size="sm" variant="secondary" className="flex-1 text-xs">Pipeline</Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )
+            })}
+          </div>
+        )}
       </motion.div>
     </div>
   )

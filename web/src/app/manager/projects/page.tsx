@@ -309,6 +309,13 @@ export default function ManagerProjectsPage() {
                 <Plus size={14} /> Add Member
               </Button>
             </div>
+            
+            {/* Actions */}
+            <div className="flex items-center gap-3 pt-2">
+              <Button variant="accent" className="flex-1 shadow-sm">Open Project</Button>
+              <Button variant="outline" className="flex-1 shadow-sm" onClick={() => toast(`Team size: ${assignments.length}. Full team view coming soon!`, "info")}>View Team</Button>
+            </div>
+
             <div className="space-y-3">
               {assignments.map((a, i) => (
                 <div key={i} className="flex flex-wrap items-end gap-2 rounded-xl border p-3">

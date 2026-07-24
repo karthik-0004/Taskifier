@@ -114,22 +114,25 @@ export function CalendarGrid() {
               key={`${day.dateKey}-${idx}`}
               onClick={() => onDateSelect(day.date)}
               className={`
-                group relative flex flex-col aspect-square w-full p-0.5 transition-all outline-none
+                group relative flex flex-col aspect-square w-full p-0.5 transition-all outline-none rounded-xl
                 ${day.isCurrentMonth ? "bg-card hover:bg-muted/30" : "bg-muted/10 hover:bg-muted/20"}
-                ${isSelected ? "ring-1 ring-primary ring-inset z-10 shadow-sm" : ""}
+                ${isSelected ? "bg-accent/5 z-10" : ""}
               `}
             >
               <div className="absolute top-1 right-1.5 flex items-center justify-center">
-                <span className={`
-                  text-[10px] md:text-xs font-medium z-10
-                  ${isToday ? "text-primary-foreground" : (!day.isCurrentMonth ? "text-muted-foreground/40" : "text-foreground/90")}
-                  ${isSelected && !isToday ? "text-primary font-bold" : ""}
+                <div className={`
+                  flex items-center justify-center min-w-[20px] h-[20px] rounded-[4px]
+                  ${isSelected ? "bg-primary text-primary-foreground shadow-sm z-10" : ""}
                 `}>
-                  {day.day}
-                </span>
-                {isToday && (
-                  <span className="absolute inset-0 bg-primary rounded-full size-4 md:size-5 -top-0.5 -right-1 shadow-sm" />
-                )}
+                  <span className={`
+                    text-[10px] md:text-xs font-medium z-10
+                    ${isSelected ? "text-primary-foreground font-semibold" : ""}
+                    ${isToday && !isSelected ? "text-muted-foreground bg-muted/40 rounded px-1" : ""}
+                    ${!isToday && !isSelected ? (!day.isCurrentMonth ? "text-muted-foreground/40" : "text-foreground/90") : ""}
+                  `}>
+                    {day.day}
+                  </span>
+                </div>
               </div>
 
               {/* Indicator */}
