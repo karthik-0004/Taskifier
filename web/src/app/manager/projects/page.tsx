@@ -78,18 +78,53 @@ export default function ManagerProjectsPage() {
     setCode(`${prefix}-${suffix}`)
   }
 
+  function positionToRole(position: string | null | undefined): string {
+    if (!position) return "OTHER"
+    const map: Record<string, string> = {
+      "Developer": "BACKEND",
+      "Tester": "QA",
+      "Designer": "UI_UX",
+      "DevOps": "DEVOPS",
+      "Product Manager": "OTHER",
+    }
+    return map[position] ?? "OTHER"
+  }
+
+  function rebalanceWorkload(list: typeof assignments): typeof assignments {
+    const filled = list.filter((a) => a.employeeId)
+    if (filled.length === 0) return list
+    const pct = Math.round(100 / filled.length)
+    const remainder = 100 - pct * filled.length
+    return list.map((a, i) => {
+      if (!a.employeeId) return a
+      const isLast = filled.indexOf(a) === filled.length - 1
+      return { ...a, workload: String(isLast ? pct + remainder : pct) }
+    })
+  }
+
   function addAssignment() {
-    setAssignments([...assignments, { employeeId: "", role: "OTHER", workload: "", joiningDate: "" }])
+    const next = [...assignments, { employeeId: "", role: "", workload: "", joiningDate: "" }]
+    setAssignments(rebalanceWorkload(next))
   }
 
   function updateAssignment(index: number, field: string, value: string) {
-    const updated = [...assignments]
-    ;(updated[index] as any)[field] = value
+    let updated = [...assignments]
+    if (field === "employeeId") {
+      const selected = employees.find((e) => e.id === value)
+      updated[index].employeeId = value
+      if (selected && (!updated[index].role || updated[index].role === "OTHER")) {
+        updated[index].role = positionToRole(selected.position)
+      }
+      updated = rebalanceWorkload(updated)
+    } else {
+      ;(updated[index] as any)[field] = value
+    }
     setAssignments(updated)
   }
 
   function removeAssignment(index: number) {
-    setAssignments(assignments.filter((_, i) => i !== index))
+    const filtered = assignments.filter((_, i) => i !== index)
+    setAssignments(rebalanceWorkload(filtered))
   }
 
   async function handleAiRecommend() {

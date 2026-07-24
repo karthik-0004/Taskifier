@@ -33,6 +33,38 @@ function generateCode(name: string): string {
   return `${prefix}-${suffix}`;
 }
 
+function positionToRole(position: string | null | undefined): string {
+  if (!position) return 'OTHER';
+  const map: Record<string, string> = {
+    'Developer': 'BACKEND',
+    'Tester': 'QA',
+    'Designer': 'UI_UX',
+    'DevOps': 'DEVOPS',
+    'Product Manager': 'OTHER',
+  };
+  return map[position] ?? 'OTHER';
+}
+
+function diffFields(oldData: any, newData: any): string[] {
+  const changes: string[] = [];
+  const fields: Array<{ key: string; label: string; format?: (v: any) => string }> = [
+    { key: 'name', label: 'Project Name' },
+    { key: 'description', label: 'Description' },
+    { key: 'status', label: 'Status' },
+    { key: 'priority', label: 'Priority' },
+    { key: 'startDate', label: 'Start Date', format: (v) => v ? new Date(v).toLocaleDateString() : 'Not set' },
+    { key: 'expectedEndDate', label: 'Expected End Date', format: (v) => v ? new Date(v).toLocaleDateString() : 'Not set' },
+  ];
+  for (const f of fields) {
+    if (newData[f.key] !== undefined && newData[f.key] !== oldData[f.key]) {
+      const oldVal = f.format ? f.format(oldData[f.key]) : (oldData[f.key] ?? 'Not set');
+      const newVal = f.format ? f.format(newData[f.key]) : newData[f.key];
+      changes.push(`${f.label}: ${oldVal} → ${newVal}`);
+    }
+  }
+  return changes;
+}
+
 @Injectable()
 export class ProjectsService {
   constructor(
@@ -54,6 +86,20 @@ export class ProjectsService {
     if (existing) {
       throw new ConflictException(`Project code "${code}" already exists`);
     }
+
+    // Fetch manager info
+    const manager = await this.prisma.user.findUnique({ where: { id: managerId } });
+
+    // Auto-assign roles based on employee position if role is not provided
+    const assignmentsWithRoles = dto.assignments?.length
+      ? await Promise.all(
+          dto.assignments.map(async (a) => {
+            if (a.role) return a;
+            const user = await this.prisma.user.findUnique({ where: { id: a.employeeId } });
+            return { ...a, role: positionToRole(user?.position) };
+          }),
+        )
+      : [];
 
     const project = await this.prisma.project.create({
       data: {
@@ -77,9 +123,9 @@ export class ProjectsService {
         docsUrl: dto.docsUrl,
         tags: dto.tags,
         managerId,
-        assignments: dto.assignments?.length
+        assignments: assignmentsWithRoles.length
           ? {
-              create: dto.assignments.map((a) => ({
+              create: assignmentsWithRoles.map((a) => ({
                 userId: a.employeeId,
                 role: a.role ?? 'OTHER',
                 workload: a.workload,
@@ -91,19 +137,31 @@ export class ProjectsService {
       include: projectInclude,
     });
 
-    if (dto.assignments?.length) {
+    if (assignmentsWithRoles.length) {
       const users = await this.prisma.user.findMany({
-        where: { id: { in: dto.assignments.map((a) => a.employeeId) } },
+        where: { id: { in: assignmentsWithRoles.map((a) => a.employeeId) } },
       });
-      for (const a of dto.assignments) {
+      const teamMemberList = project.assignments.map((a) => ({
+        name: a.user.name,
+        role: a.role,
+      }));
+      for (const a of assignmentsWithRoles) {
         const user = users.find((u) => u.id === a.employeeId);
         if (user) {
-          this.emailService.sendProjectAssignmentEmail(user, {
-            projectName: project.name,
-            description: project.description,
-            role: a.role ?? 'OTHER',
-            startDate: project.startDate?.toISOString(),
-            deadline: project.expectedEndDate?.toISOString(),
+          this.emailService.sendProjectAssignmentEmail({
+            user,
+            project: {
+              name: project.name,
+              code: project.code,
+              description: project.description,
+              role: a.role ?? 'OTHER',
+              startDate: project.startDate?.toISOString(),
+              expectedEndDate: project.expectedEndDate?.toISOString(),
+              status: project.status,
+              priority: project.priority,
+              managerName: manager?.name,
+              teamMembers: teamMemberList,
+            },
           });
         }
       }
@@ -142,11 +200,35 @@ export class ProjectsService {
       }
     }
 
-    return this.prisma.project.update({
+    const updated = await this.prisma.project.update({
       where: { id },
       data,
       include: projectInclude,
     });
+
+    // Send update notification to all assigned employees if relevant fields changed
+    const changes = diffFields(existing, data);
+    if (changes.length > 0 && updated.assignments.length > 0) {
+      const users = await this.prisma.user.findMany({
+        where: { id: { in: updated.assignments.map((a) => a.userId) } },
+      });
+      for (const assignment of updated.assignments) {
+        const user = users.find((u) => u.id === assignment.userId);
+        if (user) {
+          this.emailService.sendProjectUpdateEmail({
+            user,
+            project: {
+              name: updated.name,
+              code: updated.code,
+              changes,
+              managerName: updated.manager?.name,
+            },
+          });
+        }
+      }
+    }
+
+    return updated;
   }
 
   async remove(id: string) {
@@ -158,18 +240,24 @@ export class ProjectsService {
   }
 
   async assignEmployee(projectId: string, dto: AssignEmployeeDto) {
-    const project = await this.prisma.project.findUnique({ where: { id: projectId } });
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+      include: { assignments: { include: { user: { select: { id: true, name: true, email: true } } } } },
+    });
     if (!project) throw new NotFoundException('Project not found');
 
     const user = await this.prisma.user.findUnique({ where: { id: dto.employeeId } });
     if (!user) throw new NotFoundException('User not found');
+
+    // Auto-fill role from position if not provided
+    const role = dto.role ?? positionToRole(user.position);
 
     try {
       const assignment = await this.prisma.projectAssignment.create({
         data: {
           projectId,
           userId: dto.employeeId,
-          role: dto.role ?? 'OTHER',
+          role,
           workload: dto.workload,
           joiningDate: dto.joiningDate ? new Date(dto.joiningDate) : undefined,
         },
@@ -178,12 +266,33 @@ export class ProjectsService {
         },
       });
 
-      this.emailService.sendProjectAssignmentEmail(user, {
-        projectName: project.name,
-        description: project.description,
-        role: dto.role ?? 'OTHER',
-        startDate: project.startDate?.toISOString(),
-        deadline: project.expectedEndDate?.toISOString(),
+      // Re-fetch project with all assignments for the email
+      const fullProject = await this.prisma.project.findUnique({
+        where: { id: projectId },
+        include: projectInclude,
+      });
+
+      const teamMemberList = (fullProject?.assignments ?? []).map((a) => ({
+        name: a.user.name,
+        role: a.role,
+      }));
+
+      const manager = fullProject?.manager;
+
+      this.emailService.sendProjectAssignmentEmail({
+        user,
+        project: {
+          name: project.name,
+          code: project.code,
+          description: project.description,
+          role,
+          startDate: project.startDate?.toISOString(),
+          expectedEndDate: project.expectedEndDate?.toISOString(),
+          status: project.status,
+          priority: project.priority,
+          managerName: manager?.name,
+          teamMembers: teamMemberList,
+        },
       });
 
       return assignment;
@@ -196,13 +305,29 @@ export class ProjectsService {
   }
 
   async unassignEmployee(projectId: string, employeeId: string) {
-    const project = await this.prisma.project.findUnique({ where: { id: projectId } });
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+      select: { id: true, name: true, code: true },
+    });
     if (!project) throw new NotFoundException('Project not found');
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: employeeId },
+      select: { id: true, name: true, email: true },
+    });
 
     try {
       await this.prisma.projectAssignment.delete({
         where: { userId_projectId: { userId: employeeId, projectId } },
       });
+
+      if (user) {
+        this.emailService.sendProjectRemovalEmail({
+          user,
+          project: { name: project.name, code: project.code },
+          reason: 'Your assignment to this project has been ended by the manager.',
+        });
+      }
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
         throw new NotFoundException('Employee is not assigned to this project');

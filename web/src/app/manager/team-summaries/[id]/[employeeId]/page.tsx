@@ -1,186 +1,141 @@
 "use client"
 
-import { useEffect } from "react"
-import { useParams, useRouter, useSearchParams } from "next/navigation"
-import { motion } from "framer-motion"
-import { staggerContainer, staggerItem } from "@/components/animations"
-import { Mail, Briefcase, GitCommit, FileEdit, Clock } from "lucide-react"
-import { ReportHeader } from "@/components/ui/report-header"
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Avatar } from "@/components/ui/avatar"
-import { MetricsCard } from "@/components/ui/metrics-card"
-import { AttendanceBadge } from "@/components/ui/attendance-badge"
-import { AISummaryCard } from "@/components/ui/ai-summary-card"
-import { CommitList } from "@/components/ui/commit-list"
-import { Skeleton } from "@/components/ui/skeleton"
+import { useState, useEffect, useMemo } from "react"
+import { useParams, useRouter } from "next/navigation"
+import { ArrowLeft, ChevronLeft, ChevronRight, GitCommit, FileEdit, Clock, Activity, ExternalLink } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { Drawer } from "@/components/ui/drawer"
 import { useToast } from "@/components/ui/toast"
-import { useProjectDailySummary } from "@/lib/api-hooks"
+import { useUsers } from "@/lib/api-hooks"
+import { Skeleton } from "@/components/ui/skeleton"
+import { motion } from "framer-motion"
+import { Calendar as CalendarIcon } from "lucide-react"
+import { DailySummaryContent } from "@/components/ui/daily-summary-content"
+import { ActivityCalendar } from "@/components/calendar/ActivityCalendar"
 
-function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false })
-}
-
-export default function EmployeeDailyDetailPage() {
+export default function EmployeeActivityCalendarPage() {
   const { id, employeeId } = useParams<{ id: string; employeeId: string }>()
-  const searchParams = useSearchParams()
-  const date = searchParams.get("date") ?? new Date().toISOString().slice(0, 10)
   const router = useRouter()
   const { toast } = useToast()
+  
+  const { data: usersData, loading: usersLoading } = useUsers()
+  const employee = (usersData ?? []).find((u) => u.id === employeeId)
 
-  const { data, loading, error } = useProjectDailySummary(id, date)
+  const [currentDate, setCurrentDate] = useState(new Date())
+  const [attendanceData, setAttendanceData] = useState<any[]>([])
+  const [loadingAttendance, setLoadingAttendance] = useState(true)
 
+  const [selectedDate, setSelectedDate] = useState<string | null>(null)
+
+  // Fetch Attendance for the current month
   useEffect(() => {
-    if (error) toast(error, "error")
-  }, [error, toast])
+    const fetchAttendance = async () => {
+      try {
+        setLoadingAttendance(true)
+        const monthIndex = currentDate.getMonth()
+        const res = await fetch(`/api/employees/${employeeId}/attendance?month=${monthIndex}`)
+        if (res.ok) {
+          const data = await res.json()
+          setAttendanceData(data)
+        } else {
+          toast("Failed to load attendance", "error")
+        }
+      } catch (err) {
+        toast("Error loading attendance data", "error")
+      } finally {
+        setLoadingAttendance(false)
+      }
+    }
+    fetchAttendance()
+  }, [currentDate, employeeId, toast])
 
-  const employeeData = data?.employees.find((e) => e.userId === employeeId)
 
-  const commits = (employeeData?.activityEvents ?? [])
-    .filter((e) => e.type === "COMMIT")
-    .map((e) => ({
-      id: e.id,
-      message: (e.payload as any)?.message as string | undefined,
-      hash: (e.payload as any)?.hash as string | undefined,
-      timestamp: e.timestamp,
-    }))
 
-  const fileEdits = (employeeData?.activityEvents ?? [])
-    .filter((e) => e.type === "FILE_EDIT")
+
+  if (usersLoading) {
+    return (
+      <div className="space-y-8">
+        <Skeleton variant="text" className="h-4 w-32 mb-4" />
+        <Skeleton variant="text" className="h-8 w-72" />
+        <Skeleton variant="rectangular" className="h-[600px] w-full" />
+      </div>
+    )
+  }
+
+  if (!employee) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 gap-4">
+        <p className="text-body text-muted-foreground">Employee not found.</p>
+        <Button variant="secondary" onClick={() => router.push(`/manager/team-summaries/${id}`)}>Back to Team Summary</Button>
+      </div>
+    )
+  }
+
+
 
   return (
-    <div className="space-y-6">
-      <ReportHeader
-        title={employeeData?.name ?? "Employee Details"}
-        subtitle={date}
-        onBack={() => router.push(`/manager/team-summaries/${id}`)}
-      />
+    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
+      <button
+        onClick={() => router.push(`/manager/team-summaries/${id}`)}
+        className="inline-flex items-center gap-1.5 text-body-sm text-muted-foreground hover:text-foreground transition-colors mb-2"
+      >
+        <ArrowLeft size={14} /> Back to Team Summary
+      </button>
 
-      {loading ? (
-        <div className="space-y-4">
-          <Skeleton variant="rectangular" className="h-32 w-full" />
-          <Skeleton variant="rectangular" className="h-48 w-full" />
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h1 className="text-h1 mb-2">{employee.name}</h1>
+          <div className="flex items-center gap-3 text-body-sm text-muted-foreground">
+            <span className="capitalize">{employee.role.toLowerCase()}</span>
+            <span>•</span>
+            <span>{employee.email}</span>
+          </div>
         </div>
-      ) : !employeeData ? (
-        <div className="rounded-xl border border-dashed px-6 py-16 text-center">
-          <p className="text-body text-muted-foreground">No data found for this employee on {date}.</p>
+      </div>
+
+      {/* Calendar and Summary Area */}
+      <div className="flex flex-col lg:flex-row gap-6 items-start">
+        <div className="flex-none">
+          {loadingAttendance ? (
+            <Skeleton variant="rectangular" className="h-[400px] w-[380px] rounded-2xl" />
+          ) : (
+            <ActivityCalendar 
+              mode="employee" 
+              attendance={attendanceData} 
+              selectedDate={selectedDate ? new Date(selectedDate) : null}
+              onDateSelect={(date) => {
+                const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+                // Parse attendance dates to match local keys
+                const record = attendanceData.find(a => {
+                  if (a.status === "future") return false
+                  if (!a.date) return false
+                  const d = new Date(a.date)
+                  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` === dateStr
+                })
+                if (record && record.status !== "future") {
+                  setSelectedDate(dateStr)
+                }
+              }}
+            />
+          )}
         </div>
-      ) : (
-        <motion.div
-          variants={staggerContainer}
-          initial="hidden"
-          animate="visible"
-          className="space-y-6"
-        >
-          {/* Personal Information */}
-          <motion.div variants={staggerItem}>
-            <Card>
-              <CardContent className="p-5 flex items-center gap-4">
-                <Avatar name={employeeData.name} size="lg" />
-                <div className="space-y-1">
-                  <h2 className="text-h2">{employeeData.name}</h2>
-                  <div className="flex flex-wrap items-center gap-3 text-body-sm text-muted-foreground">
-                    <span className="flex items-center gap-1"><Briefcase size={12} /> {employeeData.position ?? "—"}</span>
-                    <span className="flex items-center gap-1"><Mail size={12} /> {employeeData.email}</span>
-                  </div>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Badge variant="accent">{employeeData.role.replace(/_/g, " ")}</Badge>
-                    {employeeData.skills?.split(",").map((s) => (
-                      <Badge key={s.trim()} variant="default">{s.trim()}</Badge>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          {/* Metrics */}
-          <motion.div
-            variants={staggerItem}
-            className="grid grid-cols-2 lg:grid-cols-4 gap-4"
-          >
-            <MetricsCard label="Commits" value={employeeData.commitCount} icon={<GitCommit size={18} />} />
-            <MetricsCard label="File Edits" value={employeeData.fileEditCount} icon={<FileEdit size={18} />} />
-            <MetricsCard label="Total Time" value={`${Math.floor(employeeData.totalMinutes / 60)}h ${employeeData.totalMinutes % 60}m`} icon={<Clock size={18} />} />
-            <MetricsCard label="Attendance" value={employeeData.checkIn ? "Present" : "Absent"} icon={<Clock size={18} />} />
-          </motion.div>
-
-          {/* Attendance */}
-          <motion.div variants={staggerItem}>
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-body-sm font-semibold">Attendance</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <AttendanceBadge
-                  checkIn={employeeData.checkIn}
-                  checkOut={employeeData.checkOut}
-                  totalMinutes={employeeData.totalMinutes}
-                />
-                {employeeData.checkIn && (
-                  <div className="flex items-center gap-4 mt-2 text-body-sm">
-                    <div>
-                      <span className="text-muted-foreground">Check-in: </span>
-                      <span className="font-medium">{formatTime(employeeData.checkIn)}</span>
-                    </div>
-                    {employeeData.checkOut && (
-                      <div>
-                        <span className="text-muted-foreground">Check-out: </span>
-                        <span className="font-medium">{formatTime(employeeData.checkOut)}</span>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          {/* Commits */}
-          <motion.div variants={staggerItem}>
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-body-sm font-semibold flex items-center gap-2">
-                  <GitCommit size={14} /> Commits ({commits.length})
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <CommitList commits={commits} />
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          {/* File Changes */}
-          {fileEdits.length > 0 && (
-            <motion.div variants={staggerItem}>
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-body-sm font-semibold flex items-center gap-2">
-                    <FileEdit size={14} /> Files Modified ({fileEdits.length})
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-1.5">
-                    {fileEdits.map((e) => (
-                      <div key={e.id} className="flex items-center gap-2 text-body-sm">
-                        <FileEdit size={12} className="shrink-0 text-muted-foreground" />
-                        <span>{(e.payload as any)?.file ?? (e.payload as any)?.path ?? "Unknown file"}</span>
-                        <span className="text-caption text-muted-foreground ml-auto">{formatTime(e.timestamp)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
+        
+        <div className="flex-1 w-full border border-border/60 rounded-xl bg-card/40 p-6 shadow-sm min-h-[400px]">
+          {selectedDate ? (
+            <DailySummaryContent employeeId={employeeId} selectedDate={selectedDate} />
+          ) : (
+            <div className="flex flex-col items-center justify-center h-full text-center space-y-3 text-muted-foreground pt-20">
+              <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-2">
+                <CalendarIcon size={24} />
+              </div>
+              <h3 className="text-lg font-semibold text-foreground">No Date Selected</h3>
+              <p className="text-sm max-w-sm">Select a day on the calendar to view detailed work activities, commits, and AI summaries.</p>
+            </div>
           )}
-
-          {/* AI Summary */}
-          {employeeData.summaryContent && (
-            <motion.div variants={staggerItem}>
-              <AISummaryCard text={employeeData.summaryContent} title="AI Generated Daily Summary" />
-            </motion.div>
-          )}
-        </motion.div>
-      )}
+        </div>
+      </div>
     </div>
   )
 }

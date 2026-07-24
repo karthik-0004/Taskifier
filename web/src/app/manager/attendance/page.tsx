@@ -10,6 +10,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/components/ui/toast"
 import { useAttendance, useUsers } from "@/lib/api-hooks"
+import { ActivityCalendar } from "@/components/calendar/ActivityCalendar"
 
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
@@ -36,10 +37,11 @@ export default function ManagerAttendancePage() {
   const year = currentDate.getFullYear()
   const month = currentDate.getMonth()
 
-  const monthStart = new Date(year, month, 1).toISOString().slice(0, 10)
-  const monthEnd = new Date(year, month + 1, 0).toISOString().slice(0, 10)
+  const monthStart = `${year}-${String(month + 1).padStart(2, '0')}-01`
+  const lastDay = new Date(year, month + 1, 0).getDate()
+  const monthEnd = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`
 
-  const { data: attendanceData, loading, error } = useAttendance({ startDate: monthStart, endDate: monthEnd })
+  const { data: attendanceData, loading, error, refresh } = useAttendance({ startDate: monthStart, endDate: monthEnd })
   const { data: usersData } = useUsers()
 
   useEffect(() => {
@@ -51,7 +53,8 @@ export default function ManagerAttendancePage() {
   const attendanceMap = useMemo(() => {
     const map = new Map<string, typeof attendanceData>()
     for (const record of attendanceData ?? []) {
-      const dateKey = record.date.slice(0, 10)
+      const d = new Date(record.date)
+      const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
       const existing = map.get(dateKey) ?? []
       existing.push(record)
       map.set(dateKey, existing)
@@ -59,7 +62,7 @@ export default function ManagerAttendancePage() {
     return map
   }, [attendanceData])
 
-  const selectedKey = selectedDate.toISOString().slice(0, 10)
+  const selectedKey = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`
   const selectedAttendance = attendanceMap.get(selectedKey) ?? []
 
   const presentEmployees = useMemo(() => {
@@ -76,204 +79,71 @@ export default function ManagerAttendancePage() {
   const absentCount = absentEmployees.length
   const attendancePercent = totalEmployees > 0 ? Math.round((presentCount / totalEmployees) * 100) : 0
 
-  // Calendar generation
-  const calendarDays = useMemo(() => {
-    const firstDay = new Date(year, month, 1)
-    const lastDay = new Date(year, month + 1, 0)
-    const startPad = firstDay.getDay()
-    const daysInMonth = lastDay.getDate()
 
-    const days: Array<{ day: number; date: Date; dateKey: string; isToday: boolean; isCurrentMonth: boolean }> = []
-
-    for (let i = 0; i < startPad; i++) {
-      const d = new Date(year, month, -startPad + i + 1)
-      days.push({ day: d.getDate(), date: d, dateKey: d.toISOString().slice(0, 10), isToday: false, isCurrentMonth: false })
-    }
-
-    const todayKey = new Date().toISOString().slice(0, 10)
-
-    for (let i = 1; i <= daysInMonth; i++) {
-      const d = new Date(year, month, i)
-      const dateKey = d.toISOString().slice(0, 10)
-      days.push({ day: i, date: d, dateKey, isToday: dateKey === todayKey, isCurrentMonth: true })
-    }
-
-    const remaining = 42 - days.length
-    for (let i = 1; i <= remaining; i++) {
-      const d = new Date(year, month + 1, i)
-      days.push({ day: d.getDate(), date: d, dateKey: d.toISOString().slice(0, 10), isToday: false, isCurrentMonth: false })
-    }
-
-    return days
-  }, [year, month])
-
-  function getDateIndicator(dateKey: string): "green" | "yellow" | "red" | null {
-    const records = attendanceMap.get(dateKey)
-    if (!records) return null
-    const present = records.filter((r) => r.checkInAt).length
-    const employeesOnDate = records.length
-    if (employeesOnDate === 0) return null
-    if (present === employeesOnDate) return "green"
-    if (present >= employeesOnDate / 2) return "yellow"
-    return "red"
-  }
-
-  function prevMonth() {
-    setCurrentDate(new Date(year, month - 1, 1))
-    setYearInput((month - 1 < 0 ? year - 1 : year).toString())
-  }
-
-  function nextMonth() {
-    setCurrentDate(new Date(year, month + 1, 1))
-    setYearInput((month + 1 > 11 ? year + 1 : year).toString())
-  }
-
-  function goToYear() {
-    const y = parseInt(yearInput)
-    if (!isNaN(y) && y >= 1900 && y <= 2100) {
-      setCurrentDate(new Date(y, month, 1))
-    }
-    setShowYearPicker(false)
-  }
-
-  function goToToday() {
-    const today = new Date()
-    setCurrentDate(today)
-    setSelectedDate(today)
-    setYearInput(today.getFullYear().toString())
-  }
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Attendance" subtitle="Team attendance calendar and daily overview" />
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <PageHeader title="Attendance" subtitle="Team attendance calendar and daily overview" />
+        <Button variant="outline" onClick={refresh} disabled={loading} className="shrink-0 shadow-sm border-border/60">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className={`mr-2 ${loading ? 'animate-spin' : ''}`}
+          >
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+            <path d="M3 3v5h5" />
+          </svg>
+          Refresh Data
+        </Button>
+      </div>
 
-      {/* Calendar Card */}
-      <Card>
-        <CardContent className="p-5">
-          {/* Navigation */}
-          <div className="flex items-center justify-between mb-5">
-            <div className="flex items-center gap-2">
-              <Button variant="secondary" size="sm" onClick={prevMonth}>
-                <ChevronLeft size={16} />
-              </Button>
-              <div className="flex items-center gap-2 min-w-0">
-                <h2 className="text-h3 whitespace-nowrap">{MONTHS[month]} {year}</h2>
-                {showYearPicker ? (
-                  <div className="flex items-center gap-1">
-                    <input
-                      type="number"
-                      value={yearInput}
-                      onChange={(e) => setYearInput(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && goToYear()}
-                      className="w-20 h-8 rounded-lg border border-input bg-background px-2 text-body-sm text-center"
-                      autoFocus
-                      min={1900}
-                      max={2100}
-                    />
-                    <Button variant="primary" size="sm" onClick={goToYear}>Go</Button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setShowYearPicker(true)}
-                    className="text-caption text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    <CalendarDays size={14} />
-                  </button>
-                )}
-              </div>
-              <Button variant="secondary" size="sm" onClick={nextMonth}>
-                <ChevronRight size={16} />
-              </Button>
-            </div>
-            <Button variant="ghost" size="sm" onClick={goToToday}>
-              Today
-            </Button>
-          </div>
+      {/* Top Layout: Calendar & Metrics */}
+      <div className="flex flex-col lg:flex-row gap-6 mb-6">
+        {/* Calendar Component */}
+        <div className="flex-none">
+          <ActivityCalendar 
+            mode="attendance" 
+            attendance={attendanceData ?? []} 
+            selectedDate={selectedDate}
+            onDateSelect={setSelectedDate}
+          />
+        </div>
 
-          {/* Day headers */}
-          <div className="grid grid-cols-7 mb-1">
-            {DAYS.map((d) => (
-              <div key={d} className="text-center text-caption text-muted-foreground font-medium py-1">
-                {d}
-              </div>
-            ))}
-          </div>
-
-          {/* Calendar grid */}
-          <div className="grid grid-cols-7 gap-px bg-border rounded-xl overflow-hidden">
-            {calendarDays.map((day) => {
-              const isSelected = day.dateKey === selectedKey
-              const indicator = getDateIndicator(day.dateKey)
-              const absentCount = indicator ? (allEmployees.length - (attendanceMap.get(day.dateKey)?.filter((r) => r.checkInAt).length ?? 0)) : 0
-
-              return (
-                <button
-                  key={day.dateKey}
-                  onClick={() => setSelectedDate(day.date)}
-                  className={`
-                    relative flex flex-col items-center justify-center py-2.5 px-1 transition-colors min-h-[52px]
-                    ${!day.isCurrentMonth ? "bg-muted/30" : "bg-card hover:bg-muted/50"}
-                    ${isSelected ? "bg-accent/10 ring-2 ring-accent ring-inset z-10" : ""}
-                  `}
-                >
-                  <span className={`
-                    text-body-sm font-medium leading-none
-                    ${day.isToday ? "flex items-center justify-center size-7 rounded-full bg-accent text-accent-foreground font-bold" : ""}
-                    ${!day.isCurrentMonth ? "text-muted-foreground/40" : "text-foreground"}
-                    ${isSelected && !day.isToday ? "text-accent font-semibold" : ""}
-                  `}>
-                    {day.day}
-                  </span>
-                  {day.isCurrentMonth && (
-                    <div className="flex items-center gap-0.5 mt-1">
-                      {indicator === "green" && <span className="size-1.5 rounded-full bg-emerald-500" />}
-                      {indicator === "yellow" && <span className="size-1.5 rounded-full bg-amber-500" />}
-                      {indicator === "red" && <span className="size-1.5 rounded-full bg-red-500" />}
-                      {absentCount > 0 && (
-                        <span className="text-[10px] leading-none text-muted-foreground/60 ml-0.5">{absentCount}</span>
-                      )}
-                    </div>
-                  )}
-                </button>
-              )
-            })}
-          </div>
-
-          {/* Legend */}
-          <div className="flex items-center gap-4 mt-4 text-caption text-muted-foreground">
-            <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-emerald-500" /> All present</span>
-            <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-amber-500" /> Partial</span>
-            <span className="flex items-center gap-1"><span className="size-2 rounded-full bg-red-500" /> High absentee</span>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-4 gap-4">
-        <Card>
-          <CardHeader><CardTitle className="text-caption text-muted-foreground">Total Employees</CardTitle></CardHeader>
-          <CardContent>
-            <p className="text-h2 font-semibold">{totalEmployees}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader><CardTitle className="text-caption text-muted-foreground">Present</CardTitle></CardHeader>
-          <CardContent>
-            <p className="text-h2 font-semibold text-emerald-600">{presentCount}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader><CardTitle className="text-caption text-muted-foreground">Absent</CardTitle></CardHeader>
-          <CardContent>
-            <p className="text-h2 font-semibold text-red-500">{absentCount}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader><CardTitle className="text-caption text-muted-foreground">Attendance %</CardTitle></CardHeader>
-          <CardContent>
-            <p className="text-h2 font-semibold">{attendancePercent}%</p>
-          </CardContent>
-        </Card>
+        {/* Summary Cards */}
+        <div className="flex-1 grid grid-cols-2 gap-4">
+          <Card className="flex flex-col justify-center">
+            <CardHeader className="pb-2"><CardTitle className="text-caption text-muted-foreground">Total Employees</CardTitle></CardHeader>
+            <CardContent>
+              <p className="text-3xl font-semibold">{totalEmployees}</p>
+            </CardContent>
+          </Card>
+          <Card className="flex flex-col justify-center">
+            <CardHeader className="pb-2"><CardTitle className="text-caption text-muted-foreground">Present</CardTitle></CardHeader>
+            <CardContent>
+              <p className="text-3xl font-semibold text-emerald-600">{presentCount}</p>
+            </CardContent>
+          </Card>
+          <Card className="flex flex-col justify-center">
+            <CardHeader className="pb-2"><CardTitle className="text-caption text-muted-foreground">Absent</CardTitle></CardHeader>
+            <CardContent>
+              <p className="text-3xl font-semibold text-red-500">{absentCount}</p>
+            </CardContent>
+          </Card>
+          <Card className="flex flex-col justify-center">
+            <CardHeader className="pb-2"><CardTitle className="text-caption text-muted-foreground">Attendance %</CardTitle></CardHeader>
+            <CardContent>
+              <p className="text-3xl font-semibold">{attendancePercent}%</p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {/* Date label */}

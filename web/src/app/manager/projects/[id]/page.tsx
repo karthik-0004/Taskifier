@@ -333,9 +333,19 @@ export default function ProjectDetailPage() {
       <Dialog open={showAssign} onClose={() => setShowAssign(false)} title="Assign Employee">
         <div className="space-y-4">
           <FormField label="Employee">
-            <Select value={selectedEmployeeId} onChange={(e) => setSelectedEmployeeId(e.target.value)} placeholder="Select an employee">
+            <Select value={selectedEmployeeId} onChange={(e) => {
+              setSelectedEmployeeId(e.target.value)
+              const emp = allEmployees.find((u) => u.id === e.target.value)
+              if (emp) {
+                const map: Record<string, string> = {
+                  "Developer": "BACKEND", "Tester": "QA", "Designer": "UI_UX",
+                  "DevOps": "DEVOPS", "Product Manager": "OTHER",
+                }
+                setSelectedRole(map[emp.position ?? ""] ?? "OTHER")
+              }
+            }} placeholder="Select an employee">
               {unassignedEmployees.map((emp) => (
-                <option key={emp.id} value={emp.id}>{emp.name} — {emp.email}</option>
+                <option key={emp.id} value={emp.id}>{emp.name} — {emp.position ?? "No position"}</option>
               ))}
             </Select>
           </FormField>
