@@ -3,8 +3,9 @@ import { initializeLogger, log } from './utils/logger';
 import { getApiUrl } from './utils/config';
 import { secretStore } from './auth/secretStore';
 import { authState } from './auth/authState';
-import { initializeStatusBar } from './statusBar';
+import { statusBarManager } from './statusBar/statusBarManager';
 import { loginCommand } from './commands/login';
+import { statusCommand } from './commands/status';
 
 export async function activate(context: vscode.ExtensionContext) {
     initializeLogger();
@@ -27,15 +28,20 @@ export async function activate(context: vscode.ExtensionContext) {
     }
 
     // Initialize status bar
-    initializeStatusBar(context);
+    statusBarManager.initialize(context);
+    await statusBarManager.refresh();
 
     // Register login command specifically
     context.subscriptions.push(
         vscode.commands.registerCommand('taskifier.login', loginCommand)
     );
 
+    // Register status command specifically
+    context.subscriptions.push(
+        vscode.commands.registerCommand('taskifier.status', statusCommand)
+    );
+
     const placeholders = [
-        'status',
         'start',
         'checkout',
         'update',

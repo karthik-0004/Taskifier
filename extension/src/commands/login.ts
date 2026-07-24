@@ -3,7 +3,7 @@ import { authState } from '../auth/authState';
 import { secretStore } from '../auth/secretStore';
 import { ApiClient } from '../api/client';
 import { log } from '../utils/logger';
-import { updateStatusBar } from '../statusBar';
+import { statusBarManager } from '../statusBar/statusBarManager';
 
 export async function loginCommand() {
     log('Command taskifier.login invoked.');
@@ -81,7 +81,7 @@ export async function loginCommand() {
             );
             
             await authState.refreshFromStorage(); // Sync memory with storage
-            updateStatusBar();
+            await statusBarManager.refresh();
             
             log(`Login successful for ${email}`);
             vscode.window.showInformationMessage(`Taskifier: Connected as ${res.employee.name} (${res.employee.role})`);
