@@ -22,6 +22,24 @@
         }
       }
     },
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "taskifier-explorer",
+          "title": "Taskifier",
+          "icon": "$(pulse)"
+        }
+      ]
+    },
+    "views": {
+      "taskifier-explorer": [
+        {
+          "id": "taskifier.dashboard",
+          "name": "Dashboard",
+          "type": "webview"
+        }
+      ]
+    },
     "commands": [
       {
         "command": "taskifier.update",

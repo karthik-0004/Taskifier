@@ -139,8 +139,8 @@ export default function ManagerDashboard() {
       id: ci.id,
       name: ci.name,
       checkedIn: formatTime(ci.checkedInAt),
-      checkedOut: null,
-      status: "checked_in",
+      checkedOut: formatTime(ci.checkedOutAt),
+      status: ci.checkedOutAt ? "checked_out" : "checked_in",
     })
   }
   for (const nci of data?.attendance.notCheckedIn ?? []) {

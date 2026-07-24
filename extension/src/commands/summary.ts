@@ -3,6 +3,7 @@ import { authState } from '../auth/authState';
 import { ApiClient } from '../api/client';
 import { gitCollector } from '../git/gitCollector';
 import { updateState } from '../state/updateState';
+import { dashboardManager } from '../dashboard/dashboardManager';
 import { log } from '../utils/logger';
 
 export async function summaryCommand() {
@@ -48,6 +49,7 @@ export async function summaryCommand() {
                 );
                 
                 await updateState.setLastUpdateTime(sessionId, new Date());
+                await dashboardManager.refresh();
             }
         }
 
@@ -114,11 +116,14 @@ export async function summaryCommand() {
                 await ApiClient.approveSummary(summaryResponse.id);
             });
 
+            await dashboardManager.refresh();
+
             vscode.window.showInformationMessage("Daily Summary submitted successfully!");
             log('Daily Summary approved.');
         } else {
             vscode.window.showInformationMessage("Summary saved as draft but not approved.");
             log('Summary left as draft.');
+            await dashboardManager.refresh();
         }
 
     } catch (error: any) {

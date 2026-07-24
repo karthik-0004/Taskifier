@@ -14,6 +14,7 @@ import { summaryCommand } from './commands/summary';
 import { updateState } from './state/updateState';
 import { gitCollector } from './git/gitCollector';
 import { ApiClient } from './api/client';
+import { dashboardManager } from './dashboard/dashboardManager';
 
 export async function activate(context: vscode.ExtensionContext) {
     initializeLogger();
@@ -24,10 +25,13 @@ export async function activate(context: vscode.ExtensionContext) {
     secretStore.initialize(context);
     statusBarManager.initialize(context);
     updateState.initialize(context);
-    
-    // Load initial auth state into memory
+
+    // Load initial auth state into memory BEFORE initializing the dashboard
+    // so that the dashboard immediately knows we are logged in
     await authState.refreshFromStorage();
-    // await secretStore.clearTokens();
+    
+    // Register Activity Bar Webview Dashboard
+    dashboardManager.initialize(context);
 
 
     if (authState.isLoggedIn && authState.tokens) {

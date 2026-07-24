@@ -23,6 +23,25 @@ export class SessionsService {
       );
     }
 
+    const now = new Date();
+    const date = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    // Auto-check in if not already checked in
+    const existingAttendance = await this.prisma.attendance.findUnique({
+      where: { userId_date: { userId, date } },
+    });
+    
+    if (!existingAttendance) {
+      await this.prisma.attendance.create({
+        data: { userId, date, checkInAt: now },
+      });
+    } else if (!existingAttendance.checkInAt) {
+      await this.prisma.attendance.update({
+        where: { id: existingAttendance.id },
+        data: { checkInAt: now },
+      });
+    }
+
     return this.prisma.workSession.create({
       data: {
         userId,

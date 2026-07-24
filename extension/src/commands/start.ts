@@ -3,6 +3,7 @@ import { authState } from '../auth/authState';
 import { ApiClient } from '../api/client';
 import { log } from '../utils/logger';
 import { statusBarManager } from '../statusBar/statusBarManager';
+import { dashboardManager } from '../dashboard/dashboardManager';
 
 export async function startCommand() {
     log('Command taskifier.start invoked.');
@@ -99,6 +100,7 @@ export async function startCommand() {
 
             // 6. Success handling
             await statusBarManager.refresh();
+            await dashboardManager.refresh();
             
             let successMsg = `Started work session`;
             if (projectId) {

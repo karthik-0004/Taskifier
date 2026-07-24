@@ -3,6 +3,7 @@ import { authState } from '../auth/authState';
 import { ApiClient } from '../api/client';
 import { log } from '../utils/logger';
 import { statusBarManager } from '../statusBar/statusBarManager';
+import { dashboardManager } from '../dashboard/dashboardManager';
 
 export async function checkoutCommand() {
     log('Command taskifier.checkout invoked.');
@@ -58,6 +59,7 @@ export async function checkoutCommand() {
 
             // 5. Success handling
             await statusBarManager.refresh();
+            await dashboardManager.refresh();
             
             const successMsg = `Session ended. Worked ${workingTime} on ${projectName}. Checked out for the day.`;
             log(successMsg);

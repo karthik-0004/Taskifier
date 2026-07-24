@@ -197,4 +197,8 @@ export class ApiClient {
     public static async approveSummary(id: string): Promise<any> {
         return this.request<any>(`/summaries/${id}/approve`, { method: 'POST' });
     }
+
+    public static async getDashboard(): Promise<any> {
+        return this.request<any>('/dashboard/me');
+    }
 }

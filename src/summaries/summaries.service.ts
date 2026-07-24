@@ -22,17 +22,19 @@ export class SummariesService {
       select: { status: true },
     });
 
-    if (existing && existing.status !== 'DRAFT') {
-      throw new ConflictException(
-        `Cannot regenerate: summary for ${dateStr} is already ${existing.status.toLowerCase()}`,
-      );
-    }
+    // We no longer block generation if it's not a DRAFT.
+    // If the user wants to add more mid-day updates and regenerate, we allow it.
+    // The new generation will incorporate all updates for the day.
 
     const { generatedText } = await this.ai.generateDailySummary(userId, dateStr);
 
     const summary = await this.prisma.dailySummary.upsert({
       where: { userId_date: { userId, date } },
-      update: { aiGeneratedContent: generatedText },
+      update: { 
+        aiGeneratedContent: generatedText,
+        // Reset to DRAFT so they can review the newly generated full-day summary
+        status: 'DRAFT'
+      },
       create: {
         userId,
         date,

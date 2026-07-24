@@ -69,7 +69,7 @@ export interface DashboardDTO {
   totalActiveEmployees: number
   totalActiveProjects: number
   attendance: {
-    checkedIn: Array<{ id: string; name: string; email: string; checkedInAt: string }>
+    checkedIn: Array<{ id: string; name: string; email: string; checkedInAt: string; checkedOutAt: string | null }>
     notCheckedIn: Array<{ id: string; name: string; email: string }>
   }
   summaries: { approved: number; pending: number }

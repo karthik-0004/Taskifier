@@ -3,6 +3,7 @@ import { authState } from '../auth/authState';
 import { ApiClient } from '../api/client';
 import { gitCollector } from '../git/gitCollector';
 import { updateState } from '../state/updateState';
+import { dashboardManager } from '../dashboard/dashboardManager';
 import { log } from '../utils/logger';
 
 export async function updateCommand() {
@@ -186,6 +187,8 @@ export async function updateCommand() {
 
         // Update state
         await updateState.setLastUpdateTime(sessionId, new Date());
+        
+        await dashboardManager.refresh();
         
         vscode.window.showInformationMessage("Update submitted successfully!");
         log('Update successfully logged.');

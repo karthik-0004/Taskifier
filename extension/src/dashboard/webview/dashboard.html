@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 
+      Content-Security-Policy (CSP):
+      - default-src 'none': strictly disables all content by default to prevent XSS.
+      - style-src 'nonce-{{nonce}}': only allows styles with our generated nonce.
+      - script-src 'nonce-{{nonce}}': only allows scripts with our generated nonce.
+    -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'nonce-{{nonce}}'; script-src 'nonce-{{nonce}}';">
+    <title>Taskifier Dashboard</title>
+    <style nonce="{{nonce}}">
+        :root {
+            --tkf-primary: var(--vscode-button-background, #007acc);
+            --tkf-hover: var(--vscode-button-hoverBackground, #005999);
+            --tkf-card: var(--vscode-editor-background);
+            --tkf-border: var(--vscode-widget-border, #444);
+            --tkf-text: var(--vscode-foreground, #ccc);
+            --tkf-muted: var(--vscode-descriptionForeground, #888);
+        }
+        body {
+            font-family: var(--vscode-font-family);
+            background-color: var(--vscode-sideBar-background);
+            color: var(--tkf-text);
+            padding: 12px;
+            margin: 0;
+            line-height: 1.4;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--tkf-border);
+        }
+        .header-title {
+            font-weight: 700;
+            font-size: 13px;
+            letter-spacing: 1px;
+            color: var(--vscode-sideBarTitle-foreground);
+        }
+        .icon-btn {
+            background: none;
+            border: none;
+            color: var(--vscode-icon-foreground);
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s, color 0.2s;
+        }
+        .icon-btn:hover {
+            background-color: var(--vscode-toolbar-hoverBackground);
+            color: var(--vscode-icon-foreground);
+        }
+        .section {
+            margin-bottom: 24px;
+        }
+        h2 {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: var(--tkf-muted);
+            margin: 0 0 8px 0;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .card {
+            background-color: var(--tkf-card);
+            border: 1px solid var(--tkf-border);
+            border-radius: 6px;
+            padding: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .content {
+            font-size: 13px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .placeholder-box {
+            background-color: rgba(128, 128, 128, 0.05);
+            border: 1px dashed var(--tkf-border);
+            padding: 16px;
+            border-radius: 6px;
+            text-align: center;
+            color: var(--tkf-muted);
+            font-size: 12px;
+        }
+        .btn-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .btn {
+            flex: 1 1 calc(50% - 4px);
+            padding: 8px 12px;
+            background-color: var(--tkf-primary);
+            color: var(--vscode-button-foreground);
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            text-align: center;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+        .btn:hover {
+            background-color: var(--tkf-hover);
+            transform: translateY(-1px);
+        }
+        .btn:active {
+            transform: translateY(0);
+        }
+        .btn-secondary {
+            background-color: var(--vscode-button-secondaryBackground);
+            color: var(--vscode-button-secondaryForeground);
+        }
+        .btn-secondary:hover {
+            background-color: var(--vscode-button-secondaryHoverBackground);
+        }
+        
+        .stat-grid {
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 12px;
+        }
+        .stat-box {
+            background: rgba(128,128,128,0.03);
+            border: 1px solid var(--tkf-border);
+            border-radius: 4px;
+            padding: 8px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 18px; 
+            font-weight: 700; 
+            margin-top: 4px;
+        }
+        .timeline-item {
+            display: flex; 
+            gap: 12px; 
+            align-items: flex-start;
+        }
+        .timeline-time {
+            color: var(--tkf-muted); 
+            min-width: 45px; 
+            font-size: 11px; 
+            margin-top: 2px;
+        }
+        .timeline-content {
+            border-left: 2px solid var(--tkf-border); 
+            padding-left: 12px; 
+            padding-bottom: 12px; 
+            font-size: 12px;
+        }
+        .timeline-item:last-child .timeline-content {
+            border-left-color: var(--tkf-primary);
+            font-weight: 600;
+            padding-bottom: 0;
+        }
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 6px;
+            border-radius: 12px;
+            font-size: 10px;
+            font-weight: 600;
+            background: rgba(128,128,128,0.1);
+        }
+        .dot {
+            width: 6px; height: 6px; border-radius: 50%; margin-right: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <span class="header-title">TASKIFIER</span>
+        <button class="icon-btn" data-action="refreshDashboard" title="Refresh Dashboard">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                <path fill-rule="evenodd" clip-rule="evenodd" d="M13.626 3.63a7.5 7.5 0 1 0 1.258 4.707l-1-.264a6.5 6.5 0 1 1-1.077-4.084l-1.396.966-.462-.772 2.37-1.64.67-.17 1.056 2.545-.928.384-.5-1.205c-.328-.328-.67-.62-1.025-.873z"/>
+            </svg>
+        </button>
+    </div>
+
+    <div class="section" id="section-connection">
+        <h2>🧑‍💻 Connection Status</h2>
+        <div class="content card" id="content-connection">
+            <div class="placeholder-box">Loading status...</div>
+        </div>
+    </div>
+    
+    <div class="section" id="section-today-session">
+        <h2>⏱️ Today's Session</h2>
+        <div class="content card" id="content-today-session">
+            <div class="placeholder-box">No session active</div>
+        </div>
+    </div>
+    
+    <div class="section" id="section-today-progress">
+        <h2>📊 Today's Progress</h2>
+        <div class="content card" id="content-today-progress">
+            <div class="placeholder-box">No updates yet</div>
+        </div>
+    </div>
+    
+    <div class="section" id="section-recent-activity">
+        <h2>📝 Recent Activity</h2>
+        <div class="content card" id="content-recent-activity">
+            <div class="placeholder-box">Timeline empty</div>
+        </div>
+    </div>
+    
+    <div class="section" id="section-quick-actions">
+        <h2>⚡ Quick Actions</h2>
+        <div class="content" id="content-quick-actions">
+            <div class="placeholder-box">Actions loading...</div>
+        </div>
+    </div>
+    
+    <div class="section" id="section-pending-actions">
+        <h2>🔔 Pending Actions</h2>
+        <div class="content card" id="content-pending-actions">
+            <div class="placeholder-box">All caught up!</div>
+        </div>
+    </div>
+    
+    <div class="section" id="section-sync-status">
+        <h2>🔄 Sync Status</h2>
+        <div class="content card" id="content-sync-status">
+            <div class="placeholder-box">Synced</div>
+        </div>
+    </div>
+
+    <script nonce="{{nonce}}">
+        const vscode = acquireVsCodeApi();
+
+        // Event Delegation for strictly CSP-compliant clicks
+        document.addEventListener('click', (event) => {
+            const btnCommand = event.target.closest('[data-command]');
+            if (btnCommand) {
+                vscode.postMessage({ command: 'executeCommand', action: btnCommand.getAttribute('data-command') });
+                return;
+            }
+            const btnAction = event.target.closest('[data-action]');
+            if (btnAction) {
+                vscode.postMessage({ command: btnAction.getAttribute('data-action') });
+                return;
+            }
+        });
+        
+        // Listen for messages from the extension
+        window.addEventListener('message', event => {
+            const message = event.data;
+            
+            switch (message.command) {
+                case 'updateDashboard':
+                    const data = message.data;
+                    
+                    if (!data.loggedIn || data.backendStatus === 'Unreachable') {
+                        document.getElementById('content-connection').innerHTML = '<div style="color: var(--vscode-errorForeground);">' + (data.error || 'Not Connected') + '</div>';
+                        document.getElementById('content-today-session').innerHTML = '<div class="placeholder-box">Login to view</div>';
+                        document.getElementById('content-today-progress').innerHTML = '<div class="placeholder-box">No data</div>';
+                        document.getElementById('content-recent-activity').innerHTML = '<div class="placeholder-box">No data</div>';
+                        document.getElementById('content-quick-actions').innerHTML = '<div class="btn-row"><button class="btn" data-command="taskifier.login">Login</button></div>';
+                        document.getElementById('content-pending-actions').innerHTML = '<div class="placeholder-box">Login to view</div>';
+                        
+                        // Still render Sync Status even if disconnected
+                        renderSyncStatus(data);
+                        if (window.activeTimer) clearInterval(window.activeTimer);
+                        return;
+                    }
+
+                    // Connection Status
+                    let connHtml = `
+                        <div style="color: var(--vscode-testing-iconPassed); font-weight: 600;">&#10004; Connected</div>
+                        <div>User: <strong>${data.employee?.name}</strong></div>
+                        <div style="font-size: 11px; opacity: 0.8; margin-top: 2px; margin-bottom: 4px;">Email: ${data.employee?.email || ''}</div>
+                        <div>Organization: ${data.employee?.organizationId ? 'Assigned' : 'Not yet assigned'}</div>
+                    `;
+                    document.getElementById('content-connection').innerHTML = connHtml;
+
+                    // Today's Session
+                    let sessionHtml = '';
+                    if (!data.attendance?.checkedInAt) {
+                        sessionHtml = `
+                            <div style="color: var(--vscode-descriptionForeground);">Not checked in yet.</div>
+                            <div style="font-size: 11px; opacity: 0.8; margin-top: 4px;">Run 'Taskifier: Start Session' to check in.</div>
+                        `;
+                    } else {
+                        const checkInTime = new Date(data.attendance.checkedInAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                        sessionHtml += `<div>Checked in: <strong>${checkInTime}</strong></div>`;
+                        
+                        if (data.activeSession) {
+                            const startTime = new Date(data.activeSession.startedAt);
+                            const startTimeStr = startTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                            sessionHtml += `
+                                <div style="color: var(--vscode-testing-iconPassed); margin-top: 6px; font-weight: 600;">
+                                    ▶ Active: ${data.activeSession.projectName}
+                                </div>
+                                <div style="color: var(--tkf-muted); font-size: 11px;">Started at: ${startTimeStr}</div>
+                                <div style="font-family: var(--vscode-editor-font-family); font-size: 24px; margin-top: 8px; font-variant-numeric: tabular-nums; font-weight: 700; color: var(--tkf-primary);" id="live-timer">00:00:00</div>
+                            `;
+                            
+                            // start timer
+                            if (window.activeTimer) clearInterval(window.activeTimer);
+                            window.activeTimer = setInterval(() => {
+                                const now = new Date();
+                                const diff = Math.floor((now - startTime) / 1000);
+                                const h = Math.floor(diff / 3600).toString().padStart(2, '0');
+                                const m = Math.floor((diff % 3600) / 60).toString().padStart(2, '0');
+                                const s = Math.floor(diff % 60).toString().padStart(2, '0');
+                                const timerEl = document.getElementById('live-timer');
+                                if (timerEl) timerEl.innerText = `${h}:${m}:${s}`;
+                            }, 1000);
+                        } else if (data.lastEndedSession) {
+                            if (window.activeTimer) clearInterval(window.activeTimer);
+                            const duration = data.lastEndedSession.durationMinutes;
+                            const h = Math.floor(duration / 60);
+                            const m = duration % 60;
+                            const checkOutTime = data.attendance.checkedOutAt 
+                                ? new Date(data.attendance.checkedOutAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+                                : 'Unknown';
+                            sessionHtml += `
+                                <div style="color: var(--vscode-testing-iconPassed); margin-top: 6px;">
+                                    &#10004; Completed: <strong>${data.lastEndedSession.projectName}</strong>
+                                </div>
+                                <div>Checked out: ${checkOutTime}</div>
+                                <div>Duration: <strong>${h}h ${m}m</strong></div>
+                            `;
+                        } else {
+                            if (window.activeTimer) clearInterval(window.activeTimer);
+                            sessionHtml += `<div style="margin-top: 6px; color: var(--vscode-descriptionForeground);">Session not started</div>`;
+                        }
+                    }
+                    document.getElementById('content-today-session').innerHTML = sessionHtml;
+
+                    // Today's Progress
+                    let progressHtml = `
+                        <div class="stat-grid">
+                            <div class="stat-box">
+                                <div style="font-size: 10px; opacity: 0.7; text-transform: uppercase;">Commits</div>
+                                <div class="stat-value">${data.todayStats?.totalCommitsSynced || 0}</div>
+                            </div>
+                            <div class="stat-box">
+                                <div style="font-size: 10px; opacity: 0.7; text-transform: uppercase;">Files</div>
+                                <div class="stat-value">${data.todayStats?.filesEditedCount || 0}</div>
+                            </div>
+                            <div class="stat-box">
+                                <div style="font-size: 10px; opacity: 0.7; text-transform: uppercase;">Updates</div>
+                                <div class="stat-value">${data.todayStats?.updatesSubmittedCount || 0}</div>
+                            </div>
+                            <div class="stat-box">
+                                <div style="font-size: 10px; opacity: 0.7; text-transform: uppercase;">Attendance</div>
+                                <div class="stat-value" style="font-size: 13px; margin-top: 8px; color: ${data.attendance?.checkedInAt ? 'var(--vscode-testing-iconPassed)' : 'var(--tkf-muted)'}">${data.attendance?.checkedInAt ? 'Present' : 'Absent'}</div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    let summaryColor = 'gray';
+                    if (data.summaryStatus === 'APPROVED') summaryColor = 'var(--vscode-testing-iconPassed)';
+                    if (data.summaryStatus === 'REJECTED') summaryColor = 'var(--vscode-testing-iconFailed)';
+                    if (data.summaryStatus === 'DRAFT') summaryColor = 'var(--vscode-editorWarning-foreground)';
+                    if (data.summaryStatus === 'NONE') summaryColor = 'var(--vscode-disabledForeground)';
+
+                    progressHtml += `
+                        <div style="margin-top: 16px; border-top: 1px solid var(--tkf-border); padding-top: 12px; display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 11px; opacity: 0.8; text-transform: uppercase;">Summary Status:</span>
+                            <div class="badge">
+                                <span class="dot" style="background-color: ${summaryColor};"></span>
+                                <span style="color: ${summaryColor}">${data.summaryStatus}</span>
+                            </div>
+                        </div>
+                    `;
+                    document.getElementById('content-today-progress').innerHTML = progressHtml;
+
+                    // Recent Activity Timeline
+                    let events = [];
+                    if (data.attendance?.checkedInAt) events.push({ t: new Date(data.attendance.checkedInAt), label: 'Checked In' });
+                    if (data.activeSession?.startedAt) events.push({ t: new Date(data.activeSession.startedAt), label: 'Started Session' });
+                    if (data.lastEndedSession?.startedAt) events.push({ t: new Date(data.lastEndedSession.startedAt), label: 'Started Session' });
+                    if (data.lastEndedSession?.endedAt) events.push({ t: new Date(data.lastEndedSession.endedAt), label: 'Ended Session' });
+                    if (data.summaryGeneratedAt) events.push({ t: new Date(data.summaryGeneratedAt), label: 'Summary Generated' });
+
+                    (data.todayStats?.updateTimestamps || []).forEach(update => {
+                        if (typeof update === 'string') {
+                            events.push({ t: new Date(update), label: 'Update Submitted' });
+                        } else {
+                            const count = update.fileCount || 0;
+                            const label = count === 1 ? '1 file updated' : `${count} files updated`;
+                            events.push({ t: new Date(update.createdAt), label });
+                        }
+                    });
+
+                    events.sort((a, b) => a.t.getTime() - b.t.getTime());
+
+                    if (events.length === 0) {
+                        document.getElementById('content-recent-activity').innerHTML = '<div class="placeholder-box">Timeline empty</div>';
+                    } else {
+                        let timelineHtml = '<div style="display: flex; flex-direction: column; gap: 0;">';
+                        events.forEach((e, idx) => {
+                            const timeStr = e.t.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                            timelineHtml += `
+                                <div class="timeline-item">
+                                    <div class="timeline-time">${timeStr}</div>
+                                    <div class="timeline-content">
+                                        ${e.label}
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        timelineHtml += '</div>';
+                        document.getElementById('content-recent-activity').innerHTML = timelineHtml;
+                    }
+
+                    // Quick Actions
+                    let quickActionsHtml = '<div class="btn-row">';
+                    if (!data.activeSession) {
+                        quickActionsHtml += `<button class="btn" data-command="taskifier.start">Start Session</button>`;
+                    } else {
+                        quickActionsHtml += `<button class="btn btn-secondary" data-command="taskifier.checkout">Check Out</button>`;
+                        quickActionsHtml += `<button class="btn" data-command="taskifier.update">Submit Update</button>`;
+                    }
+
+                    if (data.activeSession || data.lastEndedSession) {
+                        quickActionsHtml += `<button class="btn btn-secondary" style="flex-basis: 100%;" data-command="taskifier.summary">Generate Summary</button>`;
+                    }
+                    quickActionsHtml += '</div>';
+
+                    if (quickActionsHtml === '<div class="btn-row"></div>') {
+                        quickActionsHtml = '<div class="placeholder-box">No actions available</div>';
+                    }
+                    document.getElementById('content-quick-actions').innerHTML = quickActionsHtml;
+
+                    // Pending Actions
+                    let pendingHtml = '';
+                    const currentHour = new Date().getHours();
+
+                    if (data.unsyncedCommitsCount > 0) {
+                        pendingHtml += `
+                            <div style="display: flex; align-items: center; gap: 8px; color: var(--vscode-editorWarning-foreground);">
+                                <span style="font-size: 14px;">⚠</span>
+                                <strong>${data.unsyncedCommitsCount} unsynced git commits</strong>
+                            </div>
+                        `;
+                    }
+
+                    if ((data.summaryStatus === 'NONE' || data.summaryStatus === 'DRAFT') && currentHour >= 14 && (data.activeSession || data.lastEndedSession)) {
+                        pendingHtml += `
+                            <div style="display: flex; align-items: center; gap: 8px; color: var(--vscode-editorWarning-foreground); margin-top: 6px;">
+                                <span style="font-size: 14px;">⚠</span>
+                                <strong>Daily Summary not submitted</strong>
+                            </div>
+                        `;
+                    }
+
+                    if (pendingHtml === '') {
+                        pendingHtml = `
+                            <div style="color: var(--vscode-testing-iconPassed); display: flex; align-items: center; gap: 8px;">
+                                <span style="font-size: 14px;">&#10004;</span>
+                                <span>You're all caught up!</span>
+                            </div>
+                        `;
+                    }
+                    document.getElementById('content-pending-actions').innerHTML = pendingHtml;
+
+                    renderSyncStatus(data);
+                    break;
+            }
+        });
+
+        function renderSyncStatus(data) {
+            let syncHtml = `
+                <div style="display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 11px;">
+                    <div style="opacity: 0.8;">Backend</div>
+                    <div style="color: ${data.backendStatus === 'Connected' ? 'var(--vscode-testing-iconPassed)' : 'var(--vscode-errorForeground)'}; font-weight: 600;">
+                        ${data.backendStatus || 'Disconnected'}
+                    </div>
+                    
+                    <div style="opacity: 0.8;">Git</div>
+                    <div style="color: ${!data.unsyncedCommitsCount || data.unsyncedCommitsCount === 0 ? 'var(--vscode-testing-iconPassed)' : 'var(--vscode-editorWarning-foreground)'}; font-weight: 600;">
+                        ${!data.unsyncedCommitsCount || data.unsyncedCommitsCount === 0 ? 'Synced' : data.unsyncedCommitsCount + ' pending'}
+                    </div>
+                    
+                    <div style="opacity: 0.8;">AI Model</div>
+                    <div style="color: ${data.aiStatus === 'Available' ? 'var(--vscode-testing-iconPassed)' : 'var(--vscode-errorForeground)'}; font-weight: 600;">
+                        ${data.aiStatus || 'Unavailable'}
+                    </div>
+                </div>
+            `;
+            if (data.lastSyncTime) {
+                const diff = Math.floor((Date.now() - data.lastSyncTime) / 60000);
+                const timeStr = diff === 0 ? 'Just now' : diff === 1 ? '1 min ago' : diff + ' mins ago';
+                syncHtml += `<div style="margin-top: 14px; font-size: 10px; opacity: 0.5; text-align: center;">Last Sync: ${timeStr}</div>`;
+            } else {
+                syncHtml += `<div style="margin-top: 14px; font-size: 10px; opacity: 0.5; text-align: center;">Never Synced</div>`;
+            }
+
+            document.getElementById('content-sync-status').innerHTML = syncHtml;
+        }
+    </script>
+</body>
+</html>

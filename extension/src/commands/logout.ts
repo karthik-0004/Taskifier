@@ -3,6 +3,7 @@ import { authState } from '../auth/authState';
 import { secretStore } from '../auth/secretStore';
 import { log } from '../utils/logger';
 import { statusBarManager } from '../statusBar/statusBarManager';
+import { dashboardManager } from '../dashboard/dashboardManager';
 
 export async function logoutCommand() {
     log('Command taskifier.logout invoked.');
@@ -26,6 +27,7 @@ export async function logoutCommand() {
         await secretStore.clearTokens();
         await authState.refreshFromStorage();
         await statusBarManager.refresh();
+        await dashboardManager.refresh();
 
         log('User successfully logged out.');
         vscode.window.showInformationMessage("Disconnected from Taskifier.");
