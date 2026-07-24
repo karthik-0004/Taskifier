@@ -12,6 +12,16 @@
   "activationEvents": [],
   "main": "./dist/extension.js",
   "contributes": {
+    "configuration": {
+      "title": "Taskifier",
+      "properties": {
+        "taskifier.apiUrl": {
+          "type": "string",
+          "default": "http://localhost:3000",
+          "description": "The base URL of the Taskifier backend API."
+        }
+      }
+    },
     "commands": [
       {
         "command": "taskifier.login",
