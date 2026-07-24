@@ -219,22 +219,26 @@ export default function EmployeeDashboard() {
 
               <div className="flex items-center gap-3">
                 {!todayAttendance?.checkInAt ? (
-                  <Button className="flex-1 shadow-sm" size="lg" onClick={handleCheckIn}>
-                    <LogIn size={16} className="mr-2" />
-                    Check In
+                  <Button 
+                    className="flex-1 shadow-md bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-6 text-lg transition-transform hover:scale-[1.02]" 
+                    size="lg" 
+                    onClick={handleCheckIn}
+                  >
+                    <LogIn size={20} className="mr-2" />
+                    Check In Now
                   </Button>
                 ) : !todayAttendance?.checkOutAt ? (
                   <Tooltip content={!isAfter4PM ? "You can check out after 4:00 PM." : null} side="top">
                     <div className="flex-1 flex">
                       <Button 
                         variant="secondary" 
-                        className="flex-1 shadow-sm w-full" 
+                        className="flex-1 shadow-md w-full font-semibold py-6 text-lg transition-transform hover:scale-[1.02]" 
                         size="lg" 
                         disabled={!isAfter4PM}
                         onClick={handleCheckOut}
                       >
-                        <LogOut size={16} className="mr-2" />
-                        Check Out
+                        <LogOut size={20} className="mr-2" />
+                        Check Out Now
                       </Button>
                     </div>
                   </Tooltip>

@@ -141,7 +141,10 @@ export class ApiClient {
     }
 
     public static async checkIn(): Promise<any> {
-        return this.request<any>('/attendance/check-in', { method: 'POST' });
+        return this.request<any>('/attendance/check-in', { 
+            method: 'POST',
+            body: JSON.stringify({ source: 'VSCODE' })
+        });
     }
 
     public static async startSession(projectId: string | null): Promise<any> {
@@ -159,7 +162,8 @@ export class ApiClient {
 
     public static async checkOut(): Promise<any> {
         return this.request<any>('/attendance/check-out', {
-            method: 'POST'
+            method: 'POST',
+            body: JSON.stringify({ source: 'VSCODE' })
         });
     }
 
@@ -181,6 +185,10 @@ export class ApiClient {
                 finalContent
             })
         });
+    }
+
+    public static async getTodayUpdates(): Promise<any[]> {
+        return this.request<any[]>('/updates/mine/today');
     }
 
     public static async generateSummary(): Promise<any> {

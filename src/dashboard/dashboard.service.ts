@@ -17,7 +17,7 @@ export class DashboardService {
       }),
       this.prisma.attendance.findFirst({
         where: { userId, date: { gte: today, lt: tomorrow } },
-        select: { checkInAt: true, checkOutAt: true },
+        select: { checkInAt: true, checkOutAt: true, checkInSource: true, checkOutSource: true },
       }),
       this.prisma.workSession.findMany({
         where: { userId, startedAt: { gte: today, lt: tomorrow } },
@@ -72,8 +72,13 @@ export class DashboardService {
     return {
       employee: user,
       attendance: attendance
-        ? { checkedInAt: attendance.checkInAt, checkedOutAt: attendance.checkOutAt }
-        : { checkedInAt: null, checkedOutAt: null },
+        ? { 
+            checkedInAt: attendance.checkInAt, 
+            checkedOutAt: attendance.checkOutAt,
+            checkInSource: attendance.checkInSource,
+            checkOutSource: attendance.checkOutSource
+          }
+        : { checkedInAt: null, checkedOutAt: null, checkInSource: null, checkOutSource: null },
       activeSession: mappedActiveSession,
       lastEndedSession,
       todayStats: {

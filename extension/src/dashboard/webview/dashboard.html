@@ -297,7 +297,8 @@
                         `;
                     } else {
                         const checkInTime = new Date(data.attendance.checkedInAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                        sessionHtml += `<div>Checked in: <strong>${checkInTime}</strong></div>`;
+                        const checkInSource = data.attendance.checkInSource || 'CLI';
+                        sessionHtml += `<div>Checked in: <strong>${checkInTime}</strong> <span class="badge" style="margin-left: 6px;">${checkInSource}</span></div>`;
                         
                         if (data.activeSession) {
                             const startTime = new Date(data.activeSession.startedAt);
@@ -329,11 +330,12 @@
                             const checkOutTime = data.attendance.checkedOutAt 
                                 ? new Date(data.attendance.checkedOutAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
                                 : 'Unknown';
+                            const checkOutSource = data.attendance.checkOutSource || 'CLI';
                             sessionHtml += `
                                 <div style="color: var(--vscode-testing-iconPassed); margin-top: 6px;">
                                     &#10004; Completed: <strong>${data.lastEndedSession.projectName}</strong>
                                 </div>
-                                <div>Checked out: ${checkOutTime}</div>
+                                <div>Checked out: ${checkOutTime} <span class="badge" style="margin-left: 6px;">${checkOutSource}</span></div>
                                 <div>Duration: <strong>${h}h ${m}m</strong></div>
                             `;
                         } else {
@@ -431,7 +433,8 @@
                     }
 
                     if (data.activeSession || data.lastEndedSession) {
-                        quickActionsHtml += `<button class="btn btn-secondary" style="flex-basis: 100%;" data-command="taskifier.summary">Generate Summary</button>`;
+                        quickActionsHtml += `<button class="btn btn-secondary" style="flex-basis: 100%; margin-top: 8px;" data-command="taskifier.summary">Generate Summary</button>`;
+                        quickActionsHtml += `<button class="btn" style="flex-basis: 100%; margin-top: 8px; background-color: var(--vscode-editorInfo-background); color: var(--vscode-editorInfo-foreground);" data-command="taskifier.viewUpdates">View Today's Updates</button>`;
                     }
                     quickActionsHtml += '</div>';
 

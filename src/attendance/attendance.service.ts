@@ -15,7 +15,7 @@ export class AttendanceService {
     return new Date(now.getFullYear(), now.getMonth(), now.getDate());
   }
 
-  async checkIn(userId: string) {
+  async checkIn(userId: string, source: any = 'WEB') {
     const date = this.todayStart();
 
     const existing = await this.prisma.attendance.findUnique({
@@ -31,18 +31,18 @@ export class AttendanceService {
     if (existing) {
       return this.prisma.attendance.update({
         where: { id: existing.id },
-        data: { checkInAt: now },
+        data: { checkInAt: now, checkInSource: source },
         include: { user: { select: { id: true, name: true, email: true } } },
       });
     }
 
     return this.prisma.attendance.create({
-      data: { userId, date, checkInAt: now },
+      data: { userId, date, checkInAt: now, checkInSource: source },
       include: { user: { select: { id: true, name: true, email: true } } },
     });
   }
 
-  async checkOut(userId: string) {
+  async checkOut(userId: string, source: any = 'WEB') {
     const date = this.todayStart();
 
     const record = await this.prisma.attendance.findUnique({
@@ -55,7 +55,7 @@ export class AttendanceService {
 
     return this.prisma.attendance.update({
       where: { id: record.id },
-      data: { checkOutAt: new Date() },
+      data: { checkOutAt: new Date(), checkOutSource: source },
       include: { user: { select: { id: true, name: true, email: true } } },
     });
   }

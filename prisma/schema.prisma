@@ -40,6 +40,8 @@ enum ProjectCategory {
 enum SessionSource {
   VSCODE
   CURSOR
+  WEB
+  CLI
   OTHER
 }
 
@@ -201,11 +203,13 @@ model WeeklyReport {
 }
 
 model Attendance {
-  id         String    @id @default(uuid())
-  userId     String
-  date       DateTime
-  checkInAt  DateTime?
-  checkOutAt DateTime?
+  id             String         @id @default(uuid())
+  userId         String
+  date           DateTime
+  checkInAt      DateTime?
+  checkInSource  SessionSource?
+  checkOutAt     DateTime?
+  checkOutSource SessionSource?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 

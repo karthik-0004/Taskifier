@@ -5,6 +5,7 @@ import {
   Query,
   UseGuards,
   Request,
+  Body,
 } from '@nestjs/common';
 import { AttendanceService } from './attendance.service';
 import { AttendanceQueryDto } from './dto';
@@ -19,14 +20,14 @@ export class AttendanceController {
 
   @Roles('MANAGER', 'EMPLOYEE')
   @Post('check-in')
-  checkIn(@Request() req: any) {
-    return this.attendanceService.checkIn(req.user.id);
+  checkIn(@Request() req: any, @Body('source') source?: any) {
+    return this.attendanceService.checkIn(req.user.id, source || 'WEB');
   }
 
   @Roles('MANAGER', 'EMPLOYEE')
   @Post('check-out')
-  checkOut(@Request() req: any) {
-    return this.attendanceService.checkOut(req.user.id);
+  checkOut(@Request() req: any, @Body('source') source?: any) {
+    return this.attendanceService.checkOut(req.user.id, source || 'WEB');
   }
 
   @Roles('MANAGER', 'EMPLOYEE')
