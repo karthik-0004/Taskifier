@@ -26,8 +26,24 @@ export class UsersService {
     private readonly emailService: EmailService,
   ) {}
 
+  private async generateUniqueConnectionKey(): Promise<string> {
+    const randomSegment = () => Math.random().toString(36).substring(2, 6).toUpperCase().padStart(4, '0');
+    let key = `TKF-${randomSegment()}-${randomSegment()}`;
+    let unique = false;
+    while (!unique) {
+      const exists = await this.prisma.user.findUnique({ where: { connectionKey: key } });
+      if (!exists) {
+        unique = true;
+      } else {
+        key = `TKF-${randomSegment()}-${randomSegment()}`;
+      }
+    }
+    return key;
+  }
+
   async create(dto: CreateUserDto) {
     const passwordHash = await this.passwordService.hash(dto.password);
+    const connectionKey = await this.generateUniqueConnectionKey();
 
     const user = await this.prisma.user.create({
       data: {
@@ -38,6 +54,7 @@ export class UsersService {
         position: dto.position,
         role: Role.EMPLOYEE,
         githubUsername: dto.githubUsername,
+        connectionKey,
       },
       select: userSelect,
     });
@@ -64,6 +81,15 @@ export class UsersService {
       throw new NotFoundException('User not found');
     }
 
+    return user;
+  }
+
+  async getConnectionKey(id: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      select: { connectionKey: true },
+    });
+    if (!user) throw new NotFoundException('User not found');
     return user;
   }
 

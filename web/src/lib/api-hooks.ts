@@ -283,6 +283,10 @@ export function useUsers() {
   return useFetch<UserDTO[]>(() => api<UserDTO[]>("/users"))
 }
 
+export function useConnectionKey() {
+  return useFetch<{ connectionKey: string }>(() => api<{ connectionKey: string }>("/users/me/connection-key"))
+}
+
 export function createUser(name: string, email: string, password: string, phoneNumber?: string, position?: string) {
   return api<UserDTO>("/users", {
     method: "POST",

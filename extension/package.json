@@ -1,0 +1,70 @@
+{
+  "name": "taskifier",
+  "displayName": "Taskifier",
+  "description": "Taskifier VS Code Extension",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "taskifier.login",
+        "title": "Taskifier: Login",
+        "category": "Taskifier"
+      },
+      {
+        "command": "taskifier.status",
+        "title": "Taskifier: Status",
+        "category": "Taskifier"
+      },
+      {
+        "command": "taskifier.start",
+        "title": "Taskifier: Start Session",
+        "category": "Taskifier"
+      },
+      {
+        "command": "taskifier.checkout",
+        "title": "Taskifier: Check Out",
+        "category": "Taskifier"
+      },
+      {
+        "command": "taskifier.update",
+        "title": "Taskifier: Update Activity",
+        "category": "Taskifier"
+      },
+      {
+        "command": "taskifier.summary",
+        "title": "Taskifier: Submit Summary",
+        "category": "Taskifier"
+      },
+      {
+        "command": "taskifier.logout",
+        "title": "Taskifier: Logout",
+        "category": "Taskifier"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run package",
+    "compile": "npm run check-types && npm run build",
+    "watch": "npm-run-all -p watch:*",
+    "watch:esbuild": "node esbuild.js --watch",
+    "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+    "build": "node esbuild.js",
+    "package": "node esbuild.js --production",
+    "check-types": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.74.0",
+    "@types/node": "18.x",
+    "typescript": "^5.3.3",
+    "esbuild": "^0.19.11",
+    "npm-run-all": "^4.1.5"
+  }
+}

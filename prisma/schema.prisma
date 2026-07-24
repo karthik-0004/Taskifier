@@ -66,6 +66,8 @@ model User {
   profilePicture String?
   role          Role
   githubUsername String?
+  connectionKey  String?   @unique
+  organizationId String?
   resetToken    String?
   resetTokenExpiry DateTime?
   skills        String?

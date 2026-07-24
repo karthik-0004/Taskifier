@@ -57,6 +57,47 @@ export class AuthService {
     };
   }
 
+  async extensionLogin(email: string, password: string, connectionKey: string) {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const isPasswordValid = await this.passwordService.compare(password, user.passwordHash);
+
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    if (user.connectionKey !== connectionKey) {
+      throw new UnauthorizedException('Invalid connection key');
+    }
+
+    const payload = { sub: user.id, email: user.email, role: user.role };
+
+    const accessToken = this.jwtService.sign(payload);
+    const refreshToken = this.jwtService.sign(
+      { sub: user.id },
+      {
+        secret: process.env.JWT_REFRESH_SECRET,
+        expiresIn: '7d' as const,
+      },
+    );
+
+    return {
+      accessToken,
+      refreshToken,
+      employeeId: user.id,
+      organizationId: user.organizationId,
+      employee: {
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    };
+  }
+
   async refresh(refreshToken: string) {
     try {
       const payload = this.jwtService.verify(refreshToken, {

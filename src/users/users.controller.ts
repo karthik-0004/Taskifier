@@ -30,6 +30,13 @@ export class UsersController {
   }
 
   @Roles('MANAGER', 'EMPLOYEE')
+  @Get('me/connection-key')
+  async getConnectionKey(@Request() req: any) {
+    const data = await this.usersService.getConnectionKey(req.user.id);
+    return { connectionKey: data.connectionKey };
+  }
+
+  @Roles('MANAGER', 'EMPLOYEE')
   @Patch('me')
   async updateProfile(@Request() req: any, @Body() dto: UpdateProfileDto) {
     return this.usersService.updateProfile(req.user.id, dto);

@@ -1,6 +1,6 @@
 import { Body, Controller, Post, UseGuards, Request } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { LoginDto, RefreshDto, ForgotPasswordDto, ResetPasswordDto, ChangePasswordDto } from './dto';
+import { LoginDto, RefreshDto, ForgotPasswordDto, ResetPasswordDto, ChangePasswordDto, ExtensionLoginDto } from './dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 
 @Controller('auth')
@@ -10,6 +10,11 @@ export class AuthController {
   @Post('login')
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto.email, dto.password);
+  }
+
+  @Post('extension-login')
+  extensionLogin(@Body() dto: ExtensionLoginDto) {
+    return this.authService.extensionLogin(dto.email, dto.password, dto.connectionKey);
   }
 
   @Post('refresh')
