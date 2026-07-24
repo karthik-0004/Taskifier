@@ -14,6 +14,7 @@ import { AttendanceModule } from './attendance/attendance.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { EmailModule } from './email/email.module';
+import { UpdatesModule } from './updates/updates.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { EmailModule } from './email/email.module';
     DashboardModule,
     PrismaModule,
     EmailModule,
+    UpdatesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -102,7 +102,12 @@ export class ApiClient {
                 throw new Error(message);
             }
             
-            return (text ? JSON.parse(text) : null) as T;
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                return (text ? JSON.parse(text) : null) as T;
+            } else {
+                return text as unknown as T;
+            }
         } catch (error: any) {
             log(`API Error [${endpoint}]: ${error.message}`);
             throw error;
@@ -156,5 +161,40 @@ export class ApiClient {
         return this.request<any>('/attendance/check-out', {
             method: 'POST'
         });
+    }
+
+    public static async enhanceUpdate(rawCommits: any[], manualNote?: string): Promise<string> {
+        return this.request<string>('/ai/enhance-update', {
+            method: 'POST',
+            body: JSON.stringify({ rawCommits, manualNote })
+        });
+    }
+
+    public static async submitUpdate(sessionId: string, rawCommits: any[], manualNote?: string, aiEnhancedContent?: string, finalContent?: string): Promise<any> {
+        return this.request<any>('/updates', {
+            method: 'POST',
+            body: JSON.stringify({
+                sessionId,
+                rawCommits,
+                manualNote,
+                aiEnhancedContent,
+                finalContent
+            })
+        });
+    }
+
+    public static async generateSummary(): Promise<any> {
+        return this.request<any>('/summaries/generate', { method: 'POST' });
+    }
+
+    public static async editSummary(id: string, editedContent: string): Promise<any> {
+        return this.request<any>(`/summaries/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ editedContent })
+        });
+    }
+
+    public static async approveSummary(id: string): Promise<any> {
+        return this.request<any>(`/summaries/${id}/approve`, { method: 'POST' });
     }
 }

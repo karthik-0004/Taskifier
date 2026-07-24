@@ -84,6 +84,7 @@ model User {
   dailySummaries       DailySummary[]
   weeklyReports        WeeklyReport[]
   attendance           Attendance[]
+  workUpdates          WorkUpdate[]
 }
 
 model Project {
@@ -159,6 +160,7 @@ model WorkSession {
   project Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
 
   activityEvents ActivityEvent[]
+  workUpdates    WorkUpdate[]
 }
 
 model ActivityEvent {
@@ -208,4 +210,18 @@ model Attendance {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, date])
+}
+
+model WorkUpdate {
+  id                String       @id @default(uuid())
+  userId            String
+  sessionId         String?
+  rawCommits        Json
+  manualNote        String?
+  aiEnhancedContent String?
+  finalContent      String
+  createdAt         DateTime     @default(now())
+
+  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  session WorkSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
 }

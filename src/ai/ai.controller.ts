@@ -8,8 +8,10 @@ import {
   UseGuards,
   ParseUUIDPipe,
   ForbiddenException,
+  Body,
 } from '@nestjs/common';
 import { AiService } from './ai.service';
+import { EnhanceUpdateDto } from './dto/enhance-update.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -53,5 +55,11 @@ export class AiController {
     }
 
     return this.aiService.generateDailySummary(userId, date);
+  }
+
+  @Roles('EMPLOYEE')
+  @Post('enhance-update')
+  async enhanceUpdate(@Body() dto: EnhanceUpdateDto) {
+    return this.aiService.enhanceUpdate(dto.rawCommits, dto.manualNote);
   }
 }

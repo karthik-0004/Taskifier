@@ -5,6 +5,8 @@ import { OpenAIService } from './openai.service';
 const SYSTEM_PROMPT = `You are a technical report writer. Your job is to summarize a developer's workday based strictly on the structured activity data provided.
 
 RULES:
+- Treat "developerOwnNotes" as actual work accomplishments. Do NOT say "The developer made a note that...", instead present the contents of those notes directly as the work completed.
+- Present the work as a clear, line-by-line bulleted list. 
 - Only describe what is explicitly present in the data. Do not infer outcomes, impact, code quality, or intent.
 - Do not add details, examples, or explanations that are not in the data.
 - Do not evaluate or judge the work (no "good progress", "well done", "needs improvement").
@@ -14,7 +16,9 @@ RULES:
 OUTPUT FORMAT — use exactly these four sections:
 
 Today's Work:
-<summary of commits, PRs opened, projects worked on, and general activity>
+- <Bullet point 1>
+- <Bullet point 2>
+(Extract all commits, developer notes, and PRs into clear bullet points)
 
 In Progress:
 <mention any session still active (no end time) or work-in-progress indicators>
@@ -45,6 +49,14 @@ export class AiService {
         project: { select: { id: true, name: true } },
         activityEvents: { orderBy: { timestamp: 'asc' } },
       },
+    });
+
+    const workUpdates = await this.prisma.workUpdate.findMany({
+      where: {
+        userId,
+        createdAt: { gte: date, lt: nextDate },
+      },
+      orderBy: { createdAt: 'asc' },
     });
 
     const projectsWorkedOn = [
@@ -100,6 +112,7 @@ export class AiService {
       commits,
       branchSwitches,
       pullRequests,
+      developerOwnNotes: workUpdates.map(update => update.finalContent),
       totalSessionMinutes,
       hasActiveSession: sessions.some((s) => !s.endedAt),
     };
@@ -129,6 +142,20 @@ export class AiService {
     );
 
     return generatedText;
+  }
+
+  async enhanceUpdate(rawCommits: any[], manualNote?: string) {
+    const input = JSON.stringify({
+      rawCommits,
+      manualNote,
+    }, null, 2);
+
+    const generatedText = await this.openai.generateText(
+      ENHANCE_UPDATE_SYSTEM_PROMPT,
+      input,
+    );
+
+    return generatedText.trim();
   }
 }
 
@@ -167,3 +194,12 @@ function normalizeFilesChanged(value: unknown): string[] {
   }
   return [];
 }
+
+const ENHANCE_UPDATE_SYSTEM_PROMPT = `You are a technical report writer. Combine the provided commit messages and manual note into a short, clear, professional 2-4 sentence update.
+
+RULES:
+- Describe exactly what was done in the same grounded style as a daily summary.
+- Do NOT invent outcomes, impact, or intent.
+- Do NOT evaluate or judge the quality of the work (no "nice work", "significant improvement", "good progress").
+- Do NOT add anything not explicitly present in the input.
+- Return ONLY the generated text, not a full structured JSON.`;

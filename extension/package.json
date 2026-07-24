@@ -24,8 +24,9 @@
     },
     "commands": [
       {
-        "command": "taskifier.debugCommits",
-        "title": "Taskifier: Debug - Show Commits Since Last Update"
+        "command": "taskifier.update",
+        "title": "Taskifier: Submit Mid-Day Update",
+        "category": "Taskifier"
       },
       {
         "command": "taskifier.login",
@@ -47,11 +48,7 @@
         "title": "Taskifier: Check Out",
         "category": "Taskifier"
       },
-      {
-        "command": "taskifier.update",
-        "title": "Taskifier: Update Activity",
-        "category": "Taskifier"
-      },
+
       {
         "command": "taskifier.summary",
         "title": "Taskifier: Submit Summary",

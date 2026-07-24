@@ -9,14 +9,21 @@ import { statusCommand } from './commands/status';
 import { logoutCommand } from './commands/logout';
 import { startCommand } from './commands/start';
 import { checkoutCommand } from './commands/checkout';
+import { updateCommand } from './commands/update';
+import { summaryCommand } from './commands/summary';
+import { updateState } from './state/updateState';
+import { gitCollector } from './git/gitCollector';
+import { ApiClient } from './api/client';
 
 export async function activate(context: vscode.ExtensionContext) {
     initializeLogger();
     log('Taskifier extension is now active!');
     log(`Configured API URL: ${getApiUrl()}`);
 
-    // Initialize SecretStorage with the extension context
+    // Initialize singleton dependencies
     secretStore.initialize(context);
+    statusBarManager.initialize(context);
+    updateState.initialize(context);
     
     // Load initial auth state into memory
     await authState.refreshFromStorage();
@@ -59,18 +66,17 @@ export async function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('taskifier.checkout', checkoutCommand)
     );
 
-    const placeholders = [
-        'update',
-        'summary'
-    ];
+    // Register update command
+    context.subscriptions.push(
+        vscode.commands.registerCommand('taskifier.update', updateCommand)
+    );
 
-    placeholders.forEach(cmd => {
-        const disposable = vscode.commands.registerCommand(`taskifier.${cmd}`, () => {
-            log(`Command taskifier.${cmd} invoked.`);
-            vscode.window.showInformationMessage(`Taskifier: ${cmd} — not yet implemented`);
-        });
-        context.subscriptions.push(disposable);
-    });
+    // Register summary command
+    context.subscriptions.push(
+        vscode.commands.registerCommand('taskifier.summary', summaryCommand)
+    );
+
+
 
     context.subscriptions.push(
         vscode.workspace.onDidChangeConfiguration(e => {
