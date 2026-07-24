@@ -487,7 +487,7 @@ export function useMySessions() {
 export function startSession(projectId: string) {
   return api<WorkSessionDTO>("/sessions/start", {
     method: "POST",
-    body: JSON.stringify({ projectId, source: "OTHER" }),
+    body: JSON.stringify({ projectId, source: "WEB" }),
   })
 }
 
@@ -536,11 +536,11 @@ export function useMyAttendance() {
 }
 
 export function checkIn() {
-  return api<AttendanceDTO>("/attendance/check-in", { method: "POST" })
+  return api<AttendanceDTO>("/attendance/check-in", { method: "POST", body: JSON.stringify({ source: "WEB" }) })
 }
 
 export function checkOut() {
-  return api<AttendanceDTO>("/attendance/check-out", { method: "POST" })
+  return api<AttendanceDTO>("/attendance/check-out", { method: "POST", body: JSON.stringify({ source: "WEB" }) })
 }
 
 // ── Activity ──────────────────────────────────────────────────

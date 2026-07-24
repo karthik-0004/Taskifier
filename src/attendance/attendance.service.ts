@@ -12,7 +12,7 @@ export class AttendanceService {
 
   private todayStart(): Date {
     const now = new Date();
-    return new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
   }
 
   async checkIn(userId: string, source: any = 'WEB') {

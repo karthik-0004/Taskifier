@@ -138,7 +138,7 @@ export class DashboardService {
     const [attendance, summaries] = await Promise.all([
       this.prisma.attendance.findMany({
         where: { userId: { in: employeeIds }, date: { gte: today, lt: tomorrow } },
-        select: { userId: true, checkInAt: true, checkOutAt: true },
+        select: { userId: true, checkInAt: true, checkOutAt: true, checkInSource: true, checkOutSource: true },
       }),
       this.prisma.dailySummary.findMany({
         where: { userId: { in: employeeIds }, date: { gte: today, lt: tomorrow } },
@@ -157,7 +157,9 @@ export class DashboardService {
           name: emp.name,
           email: emp.email,
           checkedInAt: record.checkInAt.toISOString(),
-          checkedOutAt: record.checkOutAt ? record.checkOutAt.toISOString() : null
+          checkedOutAt: record.checkOutAt ? record.checkOutAt.toISOString() : null,
+          checkInSource: record.checkInSource,
+          checkOutSource: record.checkOutSource
         });
       } else {
         notCheckedIn.push({
