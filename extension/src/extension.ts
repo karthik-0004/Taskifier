@@ -7,6 +7,8 @@ import { statusBarManager } from './statusBar/statusBarManager';
 import { loginCommand } from './commands/login';
 import { statusCommand } from './commands/status';
 import { logoutCommand } from './commands/logout';
+import { startCommand } from './commands/start';
+import { checkoutCommand } from './commands/checkout';
 
 export async function activate(context: vscode.ExtensionContext) {
     initializeLogger();
@@ -47,9 +49,17 @@ export async function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('taskifier.logout', logoutCommand)
     );
 
+    // Register start command specifically
+    context.subscriptions.push(
+        vscode.commands.registerCommand('taskifier.start', startCommand)
+    );
+
+    // Register checkout command specifically
+    context.subscriptions.push(
+        vscode.commands.registerCommand('taskifier.checkout', checkoutCommand)
+    );
+
     const placeholders = [
-        'start',
-        'checkout',
         'update',
         'summary'
     ];

@@ -130,4 +130,31 @@ export class ApiClient {
             throw error;
         }
     }
+
+    public static async getMyProjects(): Promise<any[]> {
+        return this.request<any[]>('/projects/mine');
+    }
+
+    public static async checkIn(): Promise<any> {
+        return this.request<any>('/attendance/check-in', { method: 'POST' });
+    }
+
+    public static async startSession(projectId: string | null): Promise<any> {
+        return this.request<any>('/sessions/start', {
+            method: 'POST',
+            body: JSON.stringify({ projectId, source: 'VSCODE' })
+        });
+    }
+
+    public static async endSession(sessionId: string): Promise<any> {
+        return this.request<any>(`/sessions/${sessionId}/end`, {
+            method: 'POST'
+        });
+    }
+
+    public static async checkOut(): Promise<any> {
+        return this.request<any>('/attendance/check-out', {
+            method: 'POST'
+        });
+    }
 }
