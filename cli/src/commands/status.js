@@ -1,0 +1,56 @@
+import chalk from 'chalk';
+import { ApiClient } from '../api.js';
+import { authState } from '../auth.js';
+
+export async function statusCmd() {
+  const tokens = authState.getTokens();
+  if (!tokens) {
+    console.log(chalk.red('\n✘ Not connected. Run `taskifier login` to get started.\n'));
+    return;
+  }
+
+  try {
+    const data = await ApiClient.getDashboard();
+    const attendanceRecords = await ApiClient.getMyAttendance();
+    
+    // Check if the most recent attendance is from today
+    let todayAttendance = null;
+    if (attendanceRecords && attendanceRecords.length > 0) {
+      const latest = attendanceRecords[0];
+      const todayStr = new Date().toDateString();
+      const latestStr = new Date(latest.date).toDateString();
+      if (todayStr === latestStr) {
+        todayAttendance = latest;
+      }
+    }
+    
+    console.log(chalk.blue.bold('\n🧑‍💻 Connection Status'));
+    console.log(`Connected as: ${chalk.green(data.employee.name)} (${data.employee.email})`);
+    
+    console.log(chalk.blue.bold('\n⏱️ Today\'s Session'));
+    if (!todayAttendance?.checkInAt) {
+      console.log(chalk.yellow('Not checked in yet. Run `taskifier check-in`'));
+    } else if (todayAttendance?.checkOutAt) {
+      console.log(chalk.gray(`Checked in at: ${new Date(todayAttendance.checkInAt).toLocaleTimeString()}`));
+      console.log(chalk.gray(`Checked out at: ${new Date(todayAttendance.checkOutAt).toLocaleTimeString()}`));
+    } else {
+      console.log(`Checked in at: ${chalk.green(new Date(todayAttendance.checkInAt).toLocaleTimeString())}`);
+    }
+
+    if (data.activeSession) {
+      console.log(`\nActive Project: ${chalk.cyan(data.activeSession.projectName)}`);
+      console.log(`Session Started: ${new Date(data.activeSession.startedAt).toLocaleTimeString()}`);
+    } else {
+      console.log(chalk.gray('\nNo active session. Run `taskifier start` to begin work.'));
+    }
+    
+    console.log(chalk.blue.bold('\n📊 Today\'s Progress'));
+    console.log(`Commits Synced: ${chalk.magenta(data.todayStats.totalCommitsSynced)}`);
+    console.log(`Updates Submitted: ${chalk.magenta(data.todayStats.updatesSubmittedCount)}`);
+    console.log(`Daily Summary: ${data.summaryStatus === 'NONE' ? chalk.gray('Pending') : chalk.green(data.summaryStatus)}`);
+    
+    console.log('\n');
+  } catch (error) {
+    console.log(chalk.red(`\n✘ Failed to fetch status: ${error.message}\n`));
+  }
+}
