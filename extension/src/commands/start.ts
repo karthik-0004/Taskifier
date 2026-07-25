@@ -42,7 +42,7 @@ export async function startCommand() {
             });
 
             if (todayEntry && todayEntry.checkOutAt) {
-                vscode.window.showWarningMessage("You have already checked out for the day. You cannot start a new session.");
+                vscode.window.showInformationMessage("Today's session has already been completed. You can start a new session tomorrow.");
                 return;
             }
 
@@ -118,9 +118,14 @@ export async function startCommand() {
             vscode.window.showInformationMessage(`Taskifier: ${successMsg}`);
             
         } catch (error: any) {
-            // 7. Error handling
-            log(`Start session failed: ${error.message}`);
-            vscode.window.showErrorMessage(`Failed to start session: ${error.message}`);
+            if (error.message && error.message.includes('already been completed')) {
+                vscode.window.showInformationMessage(error.message);
+            } else if (error.message && error.message.includes('already have an active session')) {
+                vscode.window.showInformationMessage(error.message);
+            } else {
+                log(`Start session failed: ${error.message}`);
+                vscode.window.showErrorMessage(`Failed to start session: ${error.message}`);
+            }
             await statusBarManager.refresh(); 
         }
     });

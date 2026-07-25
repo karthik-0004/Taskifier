@@ -1,51 +1,79 @@
-import Conf from 'conf';
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
 
-const config = new Conf({
-  projectName: 'taskifier-cli',
-  defaults: {
+const authFilePath = path.join(os.homedir(), '.taskifier-auth.json');
+
+const getSharedConfig = () => {
+  try {
+    if (fs.existsSync(authFilePath)) {
+      return JSON.parse(fs.readFileSync(authFilePath, 'utf8'));
+    }
+  } catch (e) { }
+  return {
     accessToken: null,
     refreshToken: null,
     employeeId: null,
     organizationId: null,
     employee: null,
     apiUrl: 'http://localhost:3000'
-  }
-});
+  };
+};
+
+const saveSharedConfig = (config) => {
+  try {
+    fs.writeFileSync(authFilePath, JSON.stringify(config, null, 2), 'utf8');
+  } catch (e) { }
+};
 
 export const authState = {
   getTokens() {
-    const accessToken = config.get('accessToken');
+    const config = getSharedConfig();
+    const accessToken = config.accessToken;
     if (!accessToken) return null;
     return {
       accessToken,
-      refreshToken: config.get('refreshToken'),
-      employeeId: config.get('employeeId'),
-      organizationId: config.get('organizationId'),
-      employee: config.get('employee')
+      refreshToken: config.refreshToken,
+      employeeId: config.employeeId,
+      organizationId: config.organizationId,
+      employee: config.employee
     };
   },
   
   storeTokens(accessToken, refreshToken, employeeId, organizationId, employee) {
-    config.set('accessToken', accessToken);
-    config.set('refreshToken', refreshToken);
-    config.set('employeeId', employeeId);
-    config.set('organizationId', organizationId);
-    config.set('employee', employee);
+    const config = getSharedConfig();
+    config.accessToken = accessToken;
+    config.refreshToken = refreshToken;
+    config.employeeId = employeeId;
+    config.organizationId = organizationId;
+    config.employee = employee;
+    saveSharedConfig(config);
   },
   
   clearTokens() {
-    config.delete('accessToken');
-    config.delete('refreshToken');
-    config.delete('employeeId');
-    config.delete('organizationId');
-    config.delete('employee');
+    const config = getSharedConfig();
+    config.accessToken = null;
+    config.refreshToken = null;
+    config.employeeId = null;
+    config.organizationId = null;
+    config.employee = null;
+    saveSharedConfig(config);
   },
   
   getApiUrl() {
-    return config.get('apiUrl');
+    const config = getSharedConfig();
+    return config.apiUrl || 'http://localhost:3000';
   },
   
   setApiUrl(url) {
-    config.set('apiUrl', url);
+    const config = getSharedConfig();
+    config.apiUrl = url;
+    saveSharedConfig(config);
+  },
+
+  touchSync() {
+    const config = getSharedConfig();
+    config.lastCLIAction = Date.now();
+    saveSharedConfig(config);
   }
 };

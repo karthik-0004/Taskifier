@@ -31,11 +31,11 @@ export async function viewUpdatesCommand() {
                 outputChannel.appendLine(`[${index + 1}] Update submitted at ${time}`);
                 
                 if (u.manualNote) {
-                    outputChannel.appendLine(`📝 Manual Note: ${u.manualNote}`);
+                    outputChannel.appendLine(`\n📝 Manual Note: ${u.manualNote}`);
                 }
                 
                 if (u.rawCommits && Array.isArray(u.rawCommits) && u.rawCommits.length > 0) {
-                    outputChannel.appendLine(`📦 Commits Included:`);
+                    outputChannel.appendLine(`\n📦 Commits Included:`);
                     u.rawCommits.forEach((commit: any) => {
                         let fileCount = 0;
                         if (commit.filesChanged) {
@@ -48,6 +48,10 @@ export async function viewUpdatesCommand() {
                         const hash = commit.hash ? commit.hash.substring(0, 7) : 'Unknown';
                         outputChannel.appendLine(`  - [${hash}] ${msg} (${fileCount} files changed)`);
                     });
+                }
+                
+                if (u.finalContent) {
+                    outputChannel.appendLine(`\n✨ Final Formatted Update:\n${u.finalContent}`);
                 }
                 
                 outputChannel.appendLine("\n-----------------------------------------\n");

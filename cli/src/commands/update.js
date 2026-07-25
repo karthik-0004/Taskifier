@@ -7,14 +7,14 @@ import { getRecentCommits } from '../git.js';
 export async function updateCmd() {
   const tokens = authState.getTokens();
   if (!tokens) {
-    console.log(chalk.red('\n✘ Not connected. Run `taskifier login` to get started.\n'));
+    console.log(chalk.red('\n✘ Not connected. Run `t login` to get started.\n'));
     return;
   }
 
   try {
     const data = await ApiClient.getDashboard();
     if (!data.activeSession) {
-      console.log(chalk.yellow('\n✘ You must start a session first. Run `taskifier start`\n'));
+      console.log(chalk.yellow('\n✘ You must start a session first. Run `t start`\n'));
       return;
     }
 
@@ -30,20 +30,52 @@ export async function updateCmd() {
       console.log(chalk.yellow('No local commits found for today.'));
     }
 
-    const manualNote = await input({ message: '\nEnter a manual note for your update (optional):' });
+    let manualNote = '';
+    const wantsNote = await input({ message: '\nDo you want to add a manual note? (y/n): ' });
+    if (wantsNote.trim().toLowerCase().startsWith('y')) {
+      manualNote = await input({ message: 'Enter your manual note: ' });
+    }
     
-    console.log(chalk.cyan('\nProcessing update with AI...'));
+    const wantsAi = await input({ message: 'Do you want AI to format and enhance this update? (y/n): ' });
+    const useAiGeneration = wantsAi.trim().toLowerCase().startsWith('y');
     
-    const enhancedContent = await ApiClient.enhanceUpdate(commits, manualNote || '');
+    let finalContent = '';
+    let enhancedContent = '';
     
-    console.log(chalk.blue.bold('\n--- AI Generated Update ---'));
-    console.log(enhancedContent);
-    console.log(chalk.blue.bold('---------------------------\n'));
+    const rawCommitList = commits.map(c => `- ${c.message}`).join('\n');
+    let rawContent = manualNote ? `${manualNote}\n\nCommits:\n${rawCommitList}` : `Commits:\n${rawCommitList}`;
+    if (commits.length === 0) rawContent = manualNote || 'No commits or notes provided.';
+
+    if (useAiGeneration) {
+      console.log(chalk.cyan('\nProcessing update with AI...'));
+      enhancedContent = await ApiClient.enhanceUpdate(commits, manualNote);
+      
+      console.log(chalk.blue.bold('\n--- AI Generated Update ---'));
+      console.log(enhancedContent);
+      console.log(chalk.blue.bold('---------------------------\n'));
+      
+      const useAiChoice = await input({ message: 'Use this AI generated version? (y/n): ' });
+      
+      if (useAiChoice.trim().toLowerCase().startsWith('y')) {
+        finalContent = enhancedContent;
+      } else {
+        console.log(chalk.gray('\nFalling back to raw commit messages...'));
+        finalContent = rawContent;
+        console.log(chalk.blue.bold('\n--- Raw Update ---'));
+        console.log(finalContent);
+        console.log(chalk.blue.bold('------------------\n'));
+      }
+    } else {
+      finalContent = rawContent;
+      console.log(chalk.blue.bold('\n--- Raw Update ---'));
+      console.log(finalContent);
+      console.log(chalk.blue.bold('------------------\n'));
+    }
     
-    const isGood = await confirm({ message: 'Submit this update?' });
+    const submitChoice = await input({ message: 'Submit update now? (y/n): ' });
     
-    if (isGood) {
-      await ApiClient.submitUpdate(data.activeSession.id, commits, manualNote, enhancedContent, enhancedContent);
+    if (submitChoice.trim().toLowerCase().startsWith('y')) {
+      await ApiClient.submitUpdate(data.activeSession.id, commits, manualNote, enhancedContent, finalContent);
       console.log(chalk.green('\n✔ Update submitted successfully!\n'));
     } else {
       console.log(chalk.yellow('\nUpdate cancelled.\n'));

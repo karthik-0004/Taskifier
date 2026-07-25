@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "type": "module",
   "bin": {
-    "taskifier": "./bin/taskifier.js"
+    "taskifier": "./bin/taskifier.js",
+    "t": "./bin/taskifier.js"
   },
   "scripts": {},
   "keywords": [],

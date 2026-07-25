@@ -24,8 +24,9 @@ export const ApiClient = {
       (response) => response,
       async (error) => {
         const originalRequest = error.config;
+        const isLoginEndpoint = originalRequest.url?.includes('/auth/extension-login');
         
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        if (error.response?.status === 401 && !originalRequest._retry && !isLoginEndpoint) {
           if (isRefreshing) {
             return Promise.reject(error);
           }
@@ -57,7 +58,7 @@ export const ApiClient = {
           } catch (refreshError) {
             isRefreshing = false;
             authState.clearTokens();
-            console.log(chalk.red('\nSession expired. Please log in again using `taskifier login`.\n'));
+            console.log(chalk.red('\nSession expired. Please log in again using `t login`.\n'));
             process.exit(1);
           }
         }
@@ -85,12 +86,14 @@ export const ApiClient = {
   async checkIn() {
     const client = await this.getClient();
     const res = await client.post('/attendance/check-in', { source: 'CLI' });
+    authState.touchSync();
     return res.data;
   },
   
   async checkOut() {
     const client = await this.getClient();
     const res = await client.post('/attendance/check-out', { source: 'CLI' });
+    authState.touchSync();
     return res.data;
   },
 
@@ -103,6 +106,14 @@ export const ApiClient = {
   async startSession(projectId) {
     const client = await this.getClient();
     const res = await client.post('/sessions/start', { projectId, source: 'CLI' });
+    authState.touchSync();
+    return res.data;
+  },
+
+  async endSession(sessionId) {
+    const client = await this.getClient();
+    const res = await client.post(`/sessions/${sessionId}/end`);
+    authState.touchSync();
     return res.data;
   },
 
@@ -127,12 +138,33 @@ export const ApiClient = {
       aiEnhancedContent,
       finalContent
     });
+    authState.touchSync();
     return res.data;
   },
 
   async generateSummary() {
     const client = await this.getClient();
     const res = await client.post('/summaries/generate');
+    authState.touchSync();
+    return res.data;
+  },
+
+  async approveSummary(summaryId) {
+    const client = await this.getClient();
+    const res = await client.post(`/summaries/${summaryId}/approve`);
+    authState.touchSync();
+    return res.data;
+  },
+
+  async getTodayUpdates() {
+    const client = await this.getClient();
+    const res = await client.get('/updates/mine/today');
+    return res.data;
+  },
+
+  async getMySummaries() {
+    const client = await this.getClient();
+    const res = await client.get('/summaries/mine');
     return res.data;
   }
 };

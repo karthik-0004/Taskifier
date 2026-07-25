@@ -23,7 +23,15 @@ export class AttendanceService {
     });
 
     if (existing?.checkInAt) {
-      throw new ConflictException('Already checked in today');
+      if (!existing.checkOutAt) {
+        throw new ConflictException(
+          `You already have an active session today, started at ${existing.checkInAt.toISOString()}.`
+        );
+      } else {
+        throw new ConflictException(
+          "Today's session has already been completed. You can start a new session tomorrow."
+        );
+      }
     }
 
     const now = new Date();
@@ -51,6 +59,12 @@ export class AttendanceService {
 
     if (!record?.checkInAt) {
       throw new BadRequestException('Must check in before checking out');
+    }
+
+    if (record.checkOutAt) {
+      throw new ConflictException(
+        "Today's session has already been completed. You can start a new session tomorrow."
+      );
     }
 
     return this.prisma.attendance.update({

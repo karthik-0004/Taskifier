@@ -8,7 +8,7 @@ export async function loginCmd() {
 
   const tokens = authState.getTokens();
   if (tokens) {
-    console.log(chalk.yellow(`Already logged in as ${tokens.employee.name}. Run 'taskifier logout' to switch accounts.`));
+    console.log(chalk.yellow(`Already logged in as ${tokens.employee.name}. Run 't logout' to switch accounts.`));
     return;
   }
 

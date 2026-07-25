@@ -5,23 +5,28 @@ import { OpenAIService } from './openai.service';
 const SYSTEM_PROMPT = `You are a technical report writer. Your job is to summarize a developer's workday based strictly on the structured activity data provided.
 
 RULES:
-- Treat "developerOwnNotes" as actual work accomplishments. Do NOT say "The developer made a note that...", instead present the contents of those notes directly as the work completed.
-- Present the work as a clear, line-by-line bulleted list. 
+- Treat "notes" (from the data) as actual work accomplishments. Do NOT say "The developer made a note that...", present the contents directly as work completed.
+- Present the work as a clear, line-by-line bulleted list.
+- Group the work under the respective Project names provided in the data.
 - Only describe what is explicitly present in the data. Do not infer outcomes, impact, code quality, or intent.
-- Do not add details, examples, or explanations that are not in the data.
-- Do not evaluate or judge the work (no "good progress", "well done", "needs improvement").
+- Do not evaluate or judge the work.
 - If a section has no data, leave it empty — do not invent content.
 - Use plain, professional language.
 
-OUTPUT FORMAT — use exactly these four sections:
+OUTPUT FORMAT — use exactly these sections:
 
 Today's Work:
+*<Project Name 1>:*
 - <Bullet point 1>
 - <Bullet point 2>
-(Extract all commits, developer notes, and PRs into clear bullet points)
+
+*<Project Name 2>:*
+- <Bullet point 1>
+
+*(If there is unassigned work, list it under *General/Unassigned*:)*
 
 In Progress:
-<mention any session still active (no end time) or work-in-progress indicators>
+<mention if hasActiveSession is true, otherwise leave empty>
 
 Blockers:
 <leave empty if nothing in the data suggests a blocker>
@@ -48,72 +53,44 @@ export class AiService {
       include: {
         project: { select: { id: true, name: true } },
         activityEvents: { orderBy: { timestamp: 'asc' } },
+        workUpdates: { orderBy: { createdAt: 'asc' } },
       },
     });
 
-    const workUpdates = await this.prisma.workUpdate.findMany({
-      where: {
-        userId,
-        createdAt: { gte: date, lt: nextDate },
-      },
-      orderBy: { createdAt: 'asc' },
-    });
-
-    const projectsWorkedOn = [
-      ...new Map(
-        sessions
-          .filter((s) => s.project)
-          .map((s) => [s.project!.id, { id: s.project!.id, name: s.project!.name }]),
-      ).values(),
-    ];
-
-    const commits: { message: string; filesChanged: string[] }[] = [];
-    const branchSwitches: { from: string; to: string; timestamp: string }[] = [];
-    const pullRequests: { number: number; title: string; url: string }[] = [];
+    const projects: Record<string, any> = {};
+    const unassignedWork: any = { commits: [], notes: [], totalMinutes: 0 };
 
     for (const session of sessions) {
+      const projId = session.project?.id || 'unassigned';
+      if (projId !== 'unassigned' && !projects[projId]) {
+        projects[projId] = {
+          name: session.project!.name,
+          commits: [],
+          notes: [],
+          totalMinutes: 0
+        };
+      }
+      const target = projId === 'unassigned' ? unassignedWork : projects[projId];
+
+      if (session.endedAt) {
+        target.totalMinutes += Math.round((session.endedAt.getTime() - session.startedAt.getTime()) / 60000);
+      }
+
       for (const event of session.activityEvents) {
-        const payload = event.payload as any;
-        switch (event.type) {
-          case 'COMMIT':
-            commits.push({
-              message: payload.message,
-              filesChanged: normalizeFilesChanged(payload.filesChanged),
-            });
-            break;
-          case 'BRANCH_SWITCH':
-            branchSwitches.push({
-              from: payload.from,
-              to: payload.to,
-              timestamp: event.timestamp.toISOString(),
-            });
-            break;
-          case 'PR_OPENED':
-            pullRequests.push({
-              number: payload.number,
-              title: payload.title,
-              url: payload.url,
-            });
-            break;
+        if (event.type === 'COMMIT') {
+          target.commits.push({ message: (event.payload as any).message });
         }
+      }
+
+      for (const update of session.workUpdates) {
+        target.notes.push(update.finalContent);
       }
     }
 
-    const totalSessionMinutes = sessions.reduce((sum, s) => {
-      if (s.endedAt) {
-        return sum + Math.round((s.endedAt.getTime() - s.startedAt.getTime()) / 60000);
-      }
-      return sum;
-    }, 0);
-
     return {
       date: dateStr,
-      projectsWorkedOn,
-      commits,
-      branchSwitches,
-      pullRequests,
-      developerOwnNotes: workUpdates.map(update => update.finalContent),
-      totalSessionMinutes,
+      projects: Object.values(projects),
+      unassignedWork: unassignedWork.commits.length > 0 || unassignedWork.notes.length > 0 ? unassignedWork : undefined,
       hasActiveSession: sessions.some((s) => !s.endedAt),
     };
   }
@@ -195,11 +172,55 @@ function normalizeFilesChanged(value: unknown): string[] {
   return [];
 }
 
-const ENHANCE_UPDATE_SYSTEM_PROMPT = `You are a technical report writer. Combine the provided commit messages and manual note into a short, clear, professional 2-4 sentence update.
+const ENHANCE_UPDATE_SYSTEM_PROMPT = `You are an AI assistant responsible for formatting Git commit history into a professional daily work update.
 
-RULES:
-- Describe exactly what was done in the same grounded style as a daily summary.
-- Do NOT invent outcomes, impact, or intent.
-- Do NOT evaluate or judge the quality of the work (no "nice work", "significant improvement", "good progress").
-- Do NOT add anything not explicitly present in the input.
-- Return ONLY the generated text, not a full structured JSON.`;
+### Instructions
+
+1. Analyze **each Git commit independently**.
+2. **Do not combine, merge, or infer relationships** between different commits unless they clearly belong to the same logical task.
+3. Preserve the intent of every commit as a separate work item.
+4. Enhance the wording to make it professional and easy for managers to understand.
+5. Follow common Git commit conventions:
+   * **feat:** New feature or functionality
+   * **fix:** Bug fix or issue resolution
+   * **refactor:** Code restructuring without changing functionality
+   * **docs:** Documentation updates
+   * **style:** Formatting or styling changes
+   * **test:** Test creation or modification
+   * **perf:** Performance improvements
+   * **build:** Build system or dependency updates
+   * **ci:** CI/CD pipeline changes
+   * **chore:** Maintenance or miscellaneous tasks
+   * **revert:** Reverted previous changes
+6. For each commit:
+   * Identify its commit type.
+   * Rewrite the commit message into a clear professional sentence.
+   * Keep the output concise (1–2 lines per commit).
+   * Do not invent work that is not mentioned.
+   * Do not assume multiple commits are related.
+7. If a manual note is provided, display it in a separate **Manual Notes** section without merging it into any Git commit.
+
+### Output Format
+
+#### Completed Work
+
+**Feature**
+* Created the database table for employees.
+
+**Bug Fix**
+* Altered the required database rows to resolve the identified issue.
+
+**Bug Fix**
+* Fixed the customers table mismatch issue.
+
+#### Manual Notes
+* <manual note if provided>
+
+### Important Rules
+
+* Every Git commit should result in its own output item.
+* Never summarize multiple commits into a single paragraph.
+* Never create a story connecting unrelated commits.
+* Never change the technical meaning of a commit.
+* Preserve the chronological order of commits.
+* Use professional, manager-friendly language while remaining technically accurate.`;

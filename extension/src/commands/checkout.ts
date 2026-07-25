@@ -25,7 +25,21 @@ export async function checkoutCommand() {
 
             // 2. Prevent checkout if no active session
             if (!activeSession) {
-                vscode.window.showInformationMessage("You don't have an active session to end.");
+                const { attendance } = status;
+                const todayDate = new Date();
+                const todayEntry = attendance?.find((a: any) => {
+                    if (!a.date) return false;
+                    const d = new Date(a.date);
+                    return d.getDate() === todayDate.getDate() && 
+                           d.getMonth() === todayDate.getMonth() && 
+                           d.getFullYear() === todayDate.getFullYear();
+                });
+
+                if (todayEntry && todayEntry.checkOutAt) {
+                    vscode.window.showInformationMessage("Today's session has already been completed.");
+                } else {
+                    vscode.window.showInformationMessage("You don't have an active session to end.");
+                }
                 return;
             }
 

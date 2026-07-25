@@ -13,3 +13,7 @@ export function log(message: string) {
     const timestamp = new Date().toISOString();
     outputChannel.appendLine(`[${timestamp}] ${message}`);
 }
+
+export function getOutputChannel(): vscode.OutputChannel {
+    return outputChannel;
+}

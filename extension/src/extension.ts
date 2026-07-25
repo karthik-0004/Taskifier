@@ -11,7 +11,9 @@ import { startCommand } from './commands/start';
 import { checkoutCommand } from './commands/checkout';
 import { updateCommand } from './commands/update';
 import { summaryCommand } from './commands/summary';
+import { submitSummaryCommand } from './commands/submitSummary';
 import { viewUpdatesCommand } from './commands/viewUpdates';
+import { viewPreviousSummaryCommand } from './commands/viewPreviousSummary';
 import { updateState } from './state/updateState';
 import { gitCollector } from './git/gitCollector';
 import { ApiClient } from './api/client';
@@ -81,9 +83,19 @@ export async function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('taskifier.summary', summaryCommand)
     );
 
+    // Register submit summary command
+    context.subscriptions.push(
+        vscode.commands.registerCommand('taskifier.submitSummary', submitSummaryCommand)
+    );
+
     // Register view updates command
     context.subscriptions.push(
         vscode.commands.registerCommand('taskifier.viewUpdates', viewUpdatesCommand)
+    );
+
+    // Register view previous summary command
+    context.subscriptions.push(
+        vscode.commands.registerCommand('taskifier.viewPreviousSummary', viewPreviousSummaryCommand)
     );
 
 

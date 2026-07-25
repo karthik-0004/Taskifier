@@ -23,6 +23,25 @@ class DashboardManager {
         
         // Initial refresh
         this.refresh();
+
+        // Watch for CLI operations via shared auth file
+        try {
+            const fs = require('fs');
+            const os = require('os');
+            const path = require('path');
+            const authFilePath = path.join(os.homedir(), '.taskifier-auth.json');
+            
+            if (fs.existsSync(authFilePath)) {
+                fs.watchFile(authFilePath, { interval: 1000 }, (curr: any, prev: any) => {
+                    if (curr.mtimeMs !== prev.mtimeMs) {
+                        log(`Detected CLI operation via shared file. Auto-refreshing dashboard...`);
+                        this.refresh();
+                    }
+                });
+            }
+        } catch (e) {
+            log('Could not setup file watcher for CLI sync: ' + e);
+        }
     }
 
     public async refresh() {

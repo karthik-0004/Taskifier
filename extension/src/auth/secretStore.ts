@@ -1,6 +1,10 @@
 import * as vscode from 'vscode';
 import { log } from '../utils/logger';
 
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
+
 export interface EmployeeInfo {
     name: string;
     email: string;
@@ -16,10 +20,32 @@ export interface AuthTokens {
 }
 
 class SecretStore {
-    private secretStorage?: vscode.SecretStorage;
+    private get authFilePath(): string {
+        return path.join(os.homedir(), '.taskifier-auth.json');
+    }
+
+    private async getSharedConfig(): Promise<any> {
+        try {
+            if (fs.existsSync(this.authFilePath)) {
+                const data = await fs.promises.readFile(this.authFilePath, 'utf8');
+                return JSON.parse(data);
+            }
+        } catch (e) {
+            log('Error reading shared config: ' + e);
+        }
+        return {};
+    }
+
+    private async saveSharedConfig(config: any): Promise<void> {
+        try {
+            await fs.promises.writeFile(this.authFilePath, JSON.stringify(config, null, 2), 'utf8');
+        } catch (e) {
+            log('Error saving shared config: ' + e);
+        }
+    }
 
     public initialize(context: vscode.ExtensionContext) {
-        this.secretStorage = context.secrets;
+        // No longer using SecretStorage, but keep method for compatibility
     }
 
     public async storeTokens(
@@ -29,44 +55,28 @@ class SecretStore {
         organizationId: string | null,
         employeeInfo: EmployeeInfo
     ): Promise<void> {
-        if (!this.secretStorage) { throw new Error('SecretStorage not initialized'); }
+        const config = await this.getSharedConfig();
+        config.accessToken = accessToken;
+        config.refreshToken = refreshToken;
+        config.employeeId = employeeId;
+        config.organizationId = organizationId;
+        config.employee = employeeInfo;
         
-        await this.secretStorage.store('taskifier.accessToken', accessToken);
-        await this.secretStorage.store('taskifier.refreshToken', refreshToken);
-        await this.secretStorage.store('taskifier.employeeId', employeeId);
-        
-        if (organizationId) {
-            await this.secretStorage.store('taskifier.organizationId', organizationId);
-        } else {
-            await this.secretStorage.delete('taskifier.organizationId');
-        }
-        
-        // SecretStorage only stores strings, so we serialize the employee object to JSON
-        await this.secretStorage.store('taskifier.employeeInfo', JSON.stringify(employeeInfo));
-        
-        log('Tokens and employee info securely stored.');
+        await this.saveSharedConfig(config);
+        log('Tokens and employee info securely stored in shared file.');
     }
 
     public async getTokens(): Promise<AuthTokens | null> {
-        if (!this.secretStorage) { return null; }
-
-        const accessToken = await this.secretStorage.get('taskifier.accessToken');
+        const config = await this.getSharedConfig();
+        const accessToken = config.accessToken;
         if (!accessToken) { return null; }
 
-        const refreshToken = await this.secretStorage.get('taskifier.refreshToken');
-        const employeeId = await this.secretStorage.get('taskifier.employeeId');
-        const organizationId = await this.secretStorage.get('taskifier.organizationId');
-        const employeeInfoStr = await this.secretStorage.get('taskifier.employeeInfo');
+        const refreshToken = config.refreshToken;
+        const employeeId = config.employeeId;
+        const organizationId = config.organizationId;
+        const employee = config.employee;
         
-        if (!refreshToken || !employeeId || !employeeInfoStr) {
-            return null;
-        }
-
-        let employee: EmployeeInfo;
-        try {
-            employee = JSON.parse(employeeInfoStr);
-        } catch (e) {
-            log('Failed to parse stored employee info JSON.');
+        if (!refreshToken || !employeeId || !employee) {
             return null;
         }
 
@@ -80,21 +90,20 @@ class SecretStore {
     }
 
     public async clearTokens(): Promise<void> {
-        if (!this.secretStorage) { return; }
+        const config = await this.getSharedConfig();
+        config.accessToken = null;
+        config.refreshToken = null;
+        config.employeeId = null;
+        config.organizationId = null;
+        config.employee = null;
         
-        await this.secretStorage.delete('taskifier.accessToken');
-        await this.secretStorage.delete('taskifier.refreshToken');
-        await this.secretStorage.delete('taskifier.employeeId');
-        await this.secretStorage.delete('taskifier.organizationId');
-        await this.secretStorage.delete('taskifier.employeeInfo');
-        
-        log('Auth tokens securely cleared.');
+        await this.saveSharedConfig(config);
+        log('Auth tokens securely cleared from shared file.');
     }
 
     public async isLoggedIn(): Promise<boolean> {
-        if (!this.secretStorage) { return false; }
-        const accessToken = await this.secretStorage.get('taskifier.accessToken');
-        return !!accessToken;
+        const config = await this.getSharedConfig();
+        return !!config.accessToken;
     }
 }
 

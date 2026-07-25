@@ -6,7 +6,7 @@ import { select } from '@inquirer/prompts';
 export async function startCmd() {
   const tokens = authState.getTokens();
   if (!tokens) {
-    console.log(chalk.red('\n✘ Not connected. Run `taskifier login` to get started.\n'));
+    console.log(chalk.red('\n✘ Not connected. Run `t login` to get started.\n'));
     return;
   }
 
@@ -18,9 +18,18 @@ export async function startCmd() {
       return;
     }
 
+    if (data.lastEndedSession) {
+      console.log(chalk.blue(`\nℹ Today's session has already been completed. You can start a new session tomorrow.\n`));
+      return;
+    }
+
+    if (!data.attendance?.checkedInAt) {
+      console.log(chalk.gray('\nLogging attendance...'));
+      const checkInRes = await ApiClient.checkIn();
+      console.log(chalk.green(`✔ Attendance automatically logged at ${new Date(checkInRes.checkInAt).toLocaleTimeString()}`));
+    }
+
     console.log(chalk.gray('\nFetching your assigned projects...'));
-    // We need to fetch projects from the backend. 
-    // I should add getMyProjects to ApiClient
     const projects = await ApiClient.getMyProjects();
 
     if (!projects || projects.length === 0) {
@@ -43,6 +52,12 @@ export async function startCmd() {
     const res = await ApiClient.startSession(projectId);
     console.log(chalk.green(`\n✔ Work session started for ${res.project?.name || 'No Project'}\n`));
   } catch (error) {
-    console.log(chalk.red(`\n✘ Failed to start session: ${error.message}\n`));
+    if (error.message.includes('already been completed')) {
+      console.log(chalk.blue(`\nℹ ${error.message}\n`));
+    } else if (error.message.includes('already have an active session')) {
+      console.log(chalk.yellow(`\n${error.message}\n`));
+    } else {
+      console.log(chalk.red(`\n✘ Failed to start session: ${error.message}\n`));
+    }
   }
 }

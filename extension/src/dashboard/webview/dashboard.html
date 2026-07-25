@@ -425,16 +425,23 @@
 
                     // Quick Actions
                     let quickActionsHtml = '<div class="btn-row">';
+                    
+                    const isFullyCompleted = data.lastEndedSession && data.attendance?.checkedOutAt;
+
                     if (!data.activeSession) {
-                        quickActionsHtml += `<button class="btn" data-command="taskifier.start">Start Session</button>`;
+                        if (!isFullyCompleted) {
+                            quickActionsHtml += `<button class="btn" style="flex-basis: 100%;" data-command="taskifier.start">Start Session</button>`;
+                        }
                     } else {
-                        quickActionsHtml += `<button class="btn btn-secondary" data-command="taskifier.checkout">Check Out</button>`;
-                        quickActionsHtml += `<button class="btn" data-command="taskifier.update">Submit Update</button>`;
+                        quickActionsHtml += `<button class="btn btn-secondary" style="flex-basis: 100%;" data-command="taskifier.checkout">Check Out</button>`;
+                        quickActionsHtml += `<button class="btn" data-command="taskifier.update">Submit latest mid day update</button>`;
+                        quickActionsHtml += `<button class="btn btn-secondary" style="background-color: var(--vscode-editorInfo-background); color: var(--vscode-editorInfo-foreground);" data-command="taskifier.viewUpdates">View Today's Updates</button>`;
                     }
 
                     if (data.activeSession || data.lastEndedSession) {
-                        quickActionsHtml += `<button class="btn btn-secondary" style="flex-basis: 100%; margin-top: 8px;" data-command="taskifier.summary">Generate Summary</button>`;
-                        quickActionsHtml += `<button class="btn" style="flex-basis: 100%; margin-top: 8px; background-color: var(--vscode-editorInfo-background); color: var(--vscode-editorInfo-foreground);" data-command="taskifier.viewUpdates">View Today's Updates</button>`;
+                        quickActionsHtml += `<button class="btn btn-secondary" style="flex-basis: 100%; margin-top: 8px;" data-command="taskifier.viewPreviousSummary">View previous summary</button>`;
+                        quickActionsHtml += `<button class="btn btn-secondary" data-command="taskifier.summary">Generate Summary</button>`;
+                        quickActionsHtml += `<button class="btn btn-secondary" data-command="taskifier.submitSummary">Submit Today's Summary</button>`;
                     }
                     quickActionsHtml += '</div>';
 
@@ -447,7 +454,7 @@
                     let pendingHtml = '';
                     const currentHour = new Date().getHours();
 
-                    if (data.unsyncedCommitsCount > 0) {
+                    if (data.unsyncedCommitsCount > 0 && !isFullyCompleted) {
                         pendingHtml += `
                             <div style="display: flex; align-items: center; gap: 8px; color: var(--vscode-editorWarning-foreground);">
                                 <span style="font-size: 14px;">⚠</span>

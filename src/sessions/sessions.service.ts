@@ -13,23 +13,35 @@ export class SessionsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async start(userId: string, dto: StartSessionDto) {
-    const active = await this.prisma.workSession.findFirst({
-      where: { userId, endedAt: null },
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000 - 1);
+
+    const activeSession = await this.prisma.workSession.findFirst({
+      where: {
+        userId,
+        endedAt: null,
+      },
     });
 
-    if (active) {
+    if (activeSession) {
       throw new ConflictException(
-        'End your current session before starting a new one',
+        `You already have an active session, started at ${activeSession.startedAt.toISOString()}.`
       );
     }
 
-    const now = new Date();
-    const date = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const date = todayStart;
 
     // Auto-check in if not already checked in
     const existingAttendance = await this.prisma.attendance.findUnique({
       where: { userId_date: { userId, date } },
     });
+    
+    if (existingAttendance?.checkOutAt) {
+      throw new ConflictException(
+        "Today's work has already been completed (checked out). You can start a new session tomorrow."
+      );
+    }
     
     if (!existingAttendance) {
       await this.prisma.attendance.create({

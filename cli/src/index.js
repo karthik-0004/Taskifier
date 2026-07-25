@@ -5,7 +5,9 @@ import { checkOutCmd } from './commands/checkout.js';
 import { startCmd } from './commands/start.js';
 import { logoutCmd } from './commands/logout.js';
 import { updateCmd } from './commands/update.js';
-import { summaryCmd } from './commands/summary.js';
+import { submitCmd } from './commands/submit.js';
+import { switchCmd } from './commands/switch.js';
+import { viewUpdatesCmd } from './commands/view-updates.js';
 
 export function setupCommands(program) {
   program
@@ -44,7 +46,18 @@ export function setupCommands(program) {
     .action(updateCmd);
 
   program
-    .command('summary')
-    .description('Generate your AI Daily Summary')
-    .action(summaryCmd);
+    .command('submit')
+    .description('Generate and submit your AI Daily Summary')
+    .option('-r, --review', 'Review your previously submitted mid-day updates')
+    .action(submitCmd);
+    
+  program
+    .command('switch')
+    .description('Switch your active work session to a different project')
+    .action(switchCmd);
+
+  program
+    .command('view-updates')
+    .description('View today\'s submitted mid-day updates')
+    .action(viewUpdatesCmd);
 }

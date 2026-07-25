@@ -191,6 +191,10 @@ export class ApiClient {
         return this.request<any[]>('/updates/mine/today');
     }
 
+    public static async getMySummaries(): Promise<any[]> {
+        return this.request<any[]>('/summaries/mine');
+    }
+
     public static async generateSummary(): Promise<any> {
         return this.request<any>('/summaries/generate', { method: 'POST' });
     }

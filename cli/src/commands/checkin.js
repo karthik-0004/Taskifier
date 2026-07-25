@@ -5,14 +5,18 @@ import { authState } from '../auth.js';
 export async function checkInCmd() {
   const tokens = authState.getTokens();
   if (!tokens) {
-    console.log(chalk.red('\n✘ Not connected. Run `taskifier login` to get started.\n'));
+    console.log(chalk.red('\n✘ Not connected. Run `t login` to get started.\n'));
     return;
   }
 
   try {
     const res = await ApiClient.checkIn();
-    console.log(chalk.green(`\n✔ Checked in successfully at ${new Date(res.checkInAt).toLocaleTimeString()}\n`));
+    console.log(chalk.green(`\n✔ Attendance logged successfully at ${new Date(res.checkInAt).toLocaleTimeString()}\n`));
   } catch (error) {
-    console.log(chalk.red(`\n✘ Check-in failed: ${error.message}\n`));
+    if (error.message.includes('already have an active session') || error.message.includes('already been completed')) {
+      console.log(chalk.blue(`\nℹ ${error.message}\n`));
+    } else {
+      console.log(chalk.red(`\n✘ Check-in failed: ${error.message}\n`));
+    }
   }
 }

@@ -5,7 +5,7 @@ import { authState } from '../auth.js';
 export async function statusCmd() {
   const tokens = authState.getTokens();
   if (!tokens) {
-    console.log(chalk.red('\n✘ Not connected. Run `taskifier login` to get started.\n'));
+    console.log(chalk.red('\n✘ Not connected. Run `t login` to get started.\n'));
     return;
   }
 
@@ -29,7 +29,7 @@ export async function statusCmd() {
     
     console.log(chalk.blue.bold('\n⏱️ Today\'s Session'));
     if (!todayAttendance?.checkInAt) {
-      console.log(chalk.yellow('Not checked in yet. Run `taskifier check-in`'));
+      console.log(chalk.yellow('Not checked in yet. Run `t check-in`'));
     } else if (todayAttendance?.checkOutAt) {
       console.log(chalk.gray(`Checked in at: ${new Date(todayAttendance.checkInAt).toLocaleTimeString()}`));
       console.log(chalk.gray(`Checked out at: ${new Date(todayAttendance.checkOutAt).toLocaleTimeString()}`));
@@ -41,13 +41,13 @@ export async function statusCmd() {
       console.log(`\nActive Project: ${chalk.cyan(data.activeSession.projectName)}`);
       console.log(`Session Started: ${new Date(data.activeSession.startedAt).toLocaleTimeString()}`);
     } else {
-      console.log(chalk.gray('\nNo active session. Run `taskifier start` to begin work.'));
+      console.log(chalk.gray('\nNo active session. Run `t start` to begin work.'));
     }
     
     console.log(chalk.blue.bold('\n📊 Today\'s Progress'));
     console.log(`Commits Synced: ${chalk.magenta(data.todayStats.totalCommitsSynced)}`);
     console.log(`Updates Submitted: ${chalk.magenta(data.todayStats.updatesSubmittedCount)}`);
-    console.log(`Daily Summary: ${data.summaryStatus === 'NONE' ? chalk.gray('Pending') : chalk.green(data.summaryStatus)}`);
+    console.log(`Daily Summary: ${data.summaryStatus === 'NONE' ? chalk.gray('Pending (Run `t submit`)') : chalk.green(data.summaryStatus)}`);
     
     console.log('\n');
   } catch (error) {
