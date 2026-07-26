@@ -9,8 +9,12 @@ import { submitCmd } from './commands/submit.js';
 import { switchCmd } from './commands/switch.js';
 import { viewUpdatesCmd } from './commands/view-updates.js';
 import { commandsCmd } from './commands/commands.js';
+import { setupAICmd } from './commands/ai-setup.js';
 
 export function setupCommands(program) {
+  const aiCmd = program.command('ai').description('AI Configuration');
+  aiCmd.command('setup').description('Configure AI for work updates').action(setupAICmd);
+
   program
     .command('login')
     .description('Login to Taskifier')

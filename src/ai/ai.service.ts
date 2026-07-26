@@ -15,7 +15,9 @@ RULES:
 
 OUTPUT FORMAT — use exactly these sections:
 
-Today's Work:
+### Daily Summary
+
+**Today's Work:**
 *<Project Name 1>:*
 - <Bullet point 1>
 - <Bullet point 2>
@@ -23,16 +25,7 @@ Today's Work:
 *<Project Name 2>:*
 - <Bullet point 1>
 
-*(If there is unassigned work, list it under *General/Unassigned*:)*
-
-In Progress:
-<mention if hasActiveSession is true, otherwise leave empty>
-
-Blockers:
-<leave empty if nothing in the data suggests a blocker>
-
-Tomorrow:
-<leave empty — this is for the employee to fill in>`;
+*(If there is unassigned work, list it under *General/Unassigned*:)*`;
 
 @Injectable()
 export class AiService {

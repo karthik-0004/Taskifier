@@ -3,6 +3,12 @@ import { ApiClient } from '../api.js';
 import { authState } from '../auth.js';
 
 export async function checkInCmd() {
+  const mode = authState.getMode();
+  if (mode === 'personal') {
+    console.log(chalk.blue('\nℹ Attendance tracking is not required in Personal mode.\n'));
+    return;
+  }
+
   const tokens = authState.getTokens();
   if (!tokens) {
     console.log(chalk.red('\n✘ Not connected. Run `t login` to get started.\n'));

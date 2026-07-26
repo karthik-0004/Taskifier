@@ -4,6 +4,12 @@ import { authState } from '../auth.js';
 import { select } from '@inquirer/prompts';
 
 export async function switchCmd() {
+  const mode = authState.getMode();
+  if (mode === 'personal') {
+    console.log(chalk.blue('\nℹ Project switching is not applicable in Personal mode. Please run `t checkout` to end your session or `t update` to log progress.\n'));
+    return;
+  }
+
   const tokens = authState.getTokens();
   if (!tokens) {
     console.log(chalk.red('\n✘ Not connected. Run `t login` to get started.\n'));

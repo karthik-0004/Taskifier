@@ -149,6 +149,13 @@ export const ApiClient = {
     return res.data;
   },
 
+  async editSummary(summaryId, editedContent) {
+    const client = await this.getClient();
+    const res = await client.patch(`/summaries/${summaryId}`, { editedContent });
+    authState.touchSync();
+    return res.data;
+  },
+
   async approveSummary(summaryId) {
     const client = await this.getClient();
     const res = await client.post(`/summaries/${summaryId}/approve`);

@@ -16,7 +16,8 @@ const getSharedConfig = () => {
     employeeId: null,
     organizationId: null,
     employee: null,
-    apiUrl: 'http://localhost:3000'
+    apiUrl: 'http://localhost:3000',
+    mode: null
   };
 };
 
@@ -57,6 +58,7 @@ export const authState = {
     config.employeeId = null;
     config.organizationId = null;
     config.employee = null;
+    config.mode = null;
     saveSharedConfig(config);
   },
   
@@ -74,6 +76,17 @@ export const authState = {
   touchSync() {
     const config = getSharedConfig();
     config.lastCLIAction = Date.now();
+    saveSharedConfig(config);
+  },
+
+  getMode() {
+    const config = getSharedConfig();
+    return config.mode || null;
+  },
+
+  setMode(mode) {
+    const config = getSharedConfig();
+    config.mode = mode;
     saveSharedConfig(config);
   }
 };

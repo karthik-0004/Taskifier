@@ -1,8 +1,31 @@
 import chalk from 'chalk';
 import { ApiClient } from '../api.js';
 import { authState } from '../auth.js';
+import { getActiveSession, getTodayUpdates, getProfile } from '../utils/local-store.js';
 
 export async function statusCmd() {
+  const mode = authState.getMode();
+
+  if (mode === 'personal') {
+    const profile = getProfile();
+    console.log(chalk.blue.bold('\n🧑‍💻 Connection Status (Personal Mode)'));
+    console.log(`Connected as: ${chalk.green(profile?.email || 'Local User')}`);
+
+    const activeSession = getActiveSession();
+    console.log(chalk.blue.bold('\n⏱️ Today\'s Session'));
+    if (activeSession) {
+      console.log(`\nActive Session Started: ${new Date(activeSession.startedAt).toLocaleTimeString()}`);
+    } else {
+      console.log(chalk.gray('\nNo active session. Run `t start` to begin work.'));
+    }
+
+    const updates = getTodayUpdates();
+    console.log(chalk.blue.bold('\n📊 Today\'s Progress'));
+    console.log(`Updates Submitted: ${chalk.magenta(updates.length)}`);
+    console.log('\n');
+    return;
+  }
+
   const tokens = authState.getTokens();
   if (!tokens) {
     console.log(chalk.red('\n✘ Not connected. Run `t login` to get started.\n'));

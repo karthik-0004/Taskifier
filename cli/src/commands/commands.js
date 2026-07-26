@@ -13,6 +13,7 @@ export async function commandsCmd() {
     { name: 'update', desc: 'Scans your recent Git commits and uses AI to automatically generate and submit a mid-day work update.' },
     { name: 'view-updates', desc: 'Displays a list of all the mid-day updates you have submitted today.' },
     { name: 'submit', desc: 'Generates and submits your final AI Daily Summary. (Tip: Use the -r or --review flag to review your previously submitted mid-day updates before generating the summary).' },
+    { name: 'ai setup', desc: 'Configures your local AI provider settings for generating updates and summaries.' },
     { name: 'commands', desc: 'Displays this list of commands and their descriptions.' },
     { name: 'logout', desc: 'Logs you out and completely removes your account credentials from the terminal environment.' }
   ];

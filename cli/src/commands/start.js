@@ -4,7 +4,20 @@ import { authState } from '../auth.js';
 import { select } from '@inquirer/prompts';
 
 export async function startCmd() {
+  const mode = authState.getMode();
   const tokens = authState.getTokens();
+
+  if (mode === 'personal') {
+    const { getActiveSession, saveActiveSession } = await import('../utils/local-store.js');
+    if (getActiveSession()) {
+      console.log(chalk.yellow(`\nYou already have an active session in Personal mode.\n`));
+      return;
+    }
+    saveActiveSession({ startedAt: new Date().toISOString() });
+    console.log(chalk.green(`\n✔ Work session started.\nStarted at: ${new Date().toLocaleTimeString()}\n`));
+    return;
+  }
+
   if (!tokens) {
     console.log(chalk.red('\n✘ Not connected. Run `t login` to get started.\n'));
     return;
