@@ -9,6 +9,7 @@ import {
   FileText,
   BarChart3,
   CalendarCheck,
+  Settings,
 } from "lucide-react"
 import { RouteGuard } from "@/lib/route-guard"
 import { useAuth } from "@/lib/auth-context"
@@ -17,6 +18,7 @@ import { AppShell, type NavItem } from "@/components/app-shell"
 const managerNav: NavItem[] = [
   { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard size={18} />, href: "/manager/dashboard" },
   { id: "employees", label: "Employees", icon: <Users size={18} />, href: "/manager/employees" },
+  { id: "roles", label: "Roles", icon: <Settings size={18} />, href: "/manager/roles", permission: "CREATE_ROLES" },
   { id: "projects", label: "Projects", icon: <FolderKanban size={18} />, href: "/manager/projects" },
   { id: "team-summaries", label: "Team Summaries", icon: <FileText size={18} />, href: "/manager/team-summaries" },
   { id: "weekly-reports", label: "Weekly Reports", icon: <BarChart3 size={18} />, href: "/manager/weekly-reports" },
@@ -41,6 +43,7 @@ export default function ManagerLayout({ children }: { children: ReactNode }) {
         user={{
           name: user?.name ?? "",
           email: user?.email,
+          permissionKeys: user?.permissionKeys,
         }}
         activeNavId={activeNavId}
         onNavClick={(id) => {

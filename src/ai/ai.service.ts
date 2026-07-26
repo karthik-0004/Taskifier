@@ -121,10 +121,10 @@ export class AiService {
     return generatedText;
   }
 
-  async enhanceUpdate(rawCommits: any[], manualNote?: string) {
+  async enhanceUpdate(rawCommits: any[], manualTask?: string) {
     const input = JSON.stringify({
       rawCommits,
-      manualNote,
+      manualTask,
     }, null, 2);
 
     const generatedText = await this.openai.generateText(
@@ -198,7 +198,7 @@ const ENHANCE_UPDATE_SYSTEM_PROMPT = `You are an AI assistant responsible for fo
    * Keep the output concise (1–2 lines per commit).
    * Do not invent work that is not mentioned.
    * Do not assume multiple commits are related.
-7. If a manual note is provided, display it in a separate **Manual Notes** section without merging it into any Git commit.
+7. If a manual task is provided, treat it as an additional work item (similar to a commit message) and categorize it under Completed Work along with the commits.
 
 ### Output Format
 
@@ -213,8 +213,6 @@ const ENHANCE_UPDATE_SYSTEM_PROMPT = `You are an AI assistant responsible for fo
 **Bug Fix**
 * Fixed the customers table mismatch issue.
 
-#### Manual Notes
-* <manual note if provided>
 
 ### Important Rules
 

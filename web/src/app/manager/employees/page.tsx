@@ -17,6 +17,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { Drawer } from "@/components/ui/drawer"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/components/ui/toast"
+import { useAuth } from "@/lib/auth-context"
 import { useUsers, useProjects, useAttendance, useEmployeeSummaries, createUser, deleteUser, type UserDTO, type ProjectDTO, parseSummaryContent } from "@/lib/api-hooks"
 
 function formatTime(iso: string | null): string | null {
@@ -35,9 +36,11 @@ function getEmployeeProjects(employeeId: string, projects: ProjectDTO[]): Projec
 
 export default function EmployeesPage() {
   const router = useRouter()
+  const { user } = useAuth()
   const { toast } = useToast()
   const { data: usersData, loading: usersLoading, error: usersError, refresh: refreshUsers } = useUsers()
   const { data: projectsData } = useProjects()
+
   const [showAddModal, setShowAddModal] = useState(false)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [newName, setNewName] = useState("")
@@ -49,7 +52,11 @@ export default function EmployeesPage() {
   const [deleteTarget, setDeleteTarget] = useState<UserDTO | null>(null)
   const [deleting, setDeleting] = useState(false)
 
-  const { data: attendanceData } = useAttendance(selectedId ? formatDate(new Date().toISOString()) : undefined)
+  const { data: attendanceData } = useAttendance(selectedId ? {
+    employeeId: selectedId,
+    startDate: formatDate(new Date().toISOString()),
+    endDate: formatDate(new Date().toISOString())
+  } : undefined)
   const { data: summariesData } = useEmployeeSummaries(selectedId ?? undefined)
   const [summaryDates, setSummaryDates] = useState<string[]>([])
 
@@ -92,7 +99,7 @@ export default function EmployeesPage() {
       toast("Name and email are required", "error")
       return
     }
-    createUser(newName.trim(), newEmail.trim(), generatedPassword, newPhone.trim() || undefined, resolvedPosition || undefined)
+    createUser(newName.trim(), newEmail.trim(), generatedPassword, undefined, newPhone.trim() || undefined, resolvedPosition || undefined)
       .then(() => {
         setNewName(""); setNewEmail(""); setNewPhone(""); setNewPosition(""); setNewCustomPosition("")
         setShowAddModal(false)
@@ -124,10 +131,12 @@ export default function EmployeesPage() {
           title="Employees"
           subtitle="Manage your team members and their assignments"
           action={
-            <Button variant="accent" onClick={() => setShowAddModal(true)}>
-              <Plus size={16} />
-              Add Employee
-            </Button>
+            user?.permissionKeys?.includes('INVITE_EMPLOYEES') ? (
+              <Button variant="accent" onClick={() => setShowAddModal(true)}>
+                <Plus size={16} />
+                Add Employee
+              </Button>
+            ) : undefined
           }
         />
 
@@ -194,17 +203,27 @@ export default function EmployeesPage() {
               )}
             </div>
           </FormField>
-          <FormField label="Generated Temporary Password">
+          <FormField label="Temporary Password" required>
             <div className="flex gap-2">
-              <Input value={generatedPassword} readOnly className="font-mono text-body-sm bg-muted/30" />
-              <Button variant="outline" size="sm" onClick={() => { navigator.clipboard.writeText(generatedPassword); toast("Password copied", "info") }}>
-                Copy
+              <Input 
+                value={generatedPassword} 
+                onChange={(e) => setGeneratedPassword(e.target.value)}
+                placeholder="Enter password"
+                className="font-mono text-body-sm" 
+              />
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setGeneratedPassword(generateTempPassword())}
+                type="button"
+              >
+                Generate
               </Button>
             </div>
           </FormField>
           <div className="flex justify-end gap-3 pt-4 border-t">
-            <Button variant="secondary" onClick={() => setShowAddModal(false)}>Cancel</Button>
-            <Button variant="accent" onClick={handleAdd} disabled={!newName.trim() || !newEmail.trim()}>Add Employee</Button>
+            <Button variant="secondary" onClick={() => setShowAddModal(false)} type="button">Cancel</Button>
+            <Button variant="accent" onClick={handleAdd} disabled={!newName.trim() || !newEmail.trim() || !generatedPassword.trim()}>Add Employee</Button>
           </div>
         </div>
       </Dialog>
@@ -275,12 +294,17 @@ export default function EmployeesPage() {
                 <p className="text-body-sm text-muted-foreground">No attendance record for today.</p>
               ) : (
                 <div className="space-y-1.5">
-                  {todayAttendance.map((a) => (
-                    <div key={a.id} className="flex items-center justify-between rounded-xl border px-4 py-2">
-                      <span className="text-body-sm text-muted-foreground">{formatTime(a.checkIn) ?? "—"} – {formatTime(a.checkOut) ?? "—"}</span>
-                      {a.hoursWorked !== null && <Badge variant="success">{a.hoursWorked.toFixed(1)}h</Badge>}
-                    </div>
-                  ))}
+                  {todayAttendance.map((a) => {
+                    const checkInMs = a.checkInAt ? new Date(a.checkInAt).getTime() : 0
+                    const checkOutMs = a.checkOutAt ? new Date(a.checkOutAt).getTime() : Date.now()
+                    const hours = checkInMs ? ((checkOutMs - checkInMs) / 3600000).toFixed(1) : null
+                    return (
+                      <div key={a.id} className="flex items-center justify-between rounded-xl border px-4 py-2">
+                        <span className="text-body-sm text-muted-foreground">{formatTime(a.checkInAt) ?? "—"} – {formatTime(a.checkOutAt) ?? "—"}</span>
+                        {hours && <Badge variant="success">{hours}h</Badge>}
+                      </div>
+                    )
+                  })}
                 </div>
               )}
             </section>
@@ -293,16 +317,11 @@ export default function EmployeesPage() {
               ) : (
                 <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
                   {employeeSummaries.map((s: any) => {
-                    const content = parseSummaryContent(s.content)
+                    const contentStr = s.editedContent || s.aiGeneratedContent || ""
                     return (
                       <div key={s.id} className="rounded-xl border px-4 py-2.5">
                         <p className="text-caption text-muted-foreground mb-1">{formatDate(s.date)}</p>
-                        <p className="text-body-sm">{content.text}</p>
-                        {content.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-1 mt-1.5">
-                            {content.tags.map((t: string) => <Badge key={t} variant="accent">{t}</Badge>)}
-                          </div>
-                        )}
+                        <p className="text-body-sm whitespace-pre-wrap">{contentStr}</p>
                       </div>
                     )
                   })}

@@ -17,7 +17,11 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (hydrated && isAuthenticated && user) {
-      router.replace(user.role === "MANAGER" ? "/manager/dashboard" : "/employee/dashboard")
+      const target = 
+        user.role === "SUPER_ADMIN" ? "/super-admin/dashboard" :
+        user.role === "MANAGER" ? "/manager/dashboard" : 
+        "/employee/dashboard"
+      router.replace(target)
     }
   }, [hydrated, isAuthenticated, user, router])
 
@@ -40,7 +44,11 @@ export default function LoginPage() {
 
     try {
       const role = await login(email, password)
-      router.push(role === "MANAGER" ? "/manager/dashboard" : "/employee/dashboard")
+      const target = 
+        role === "SUPER_ADMIN" ? "/super-admin/dashboard" :
+        role === "MANAGER" ? "/manager/dashboard" : 
+        "/employee/dashboard"
+      router.push(target)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Invalid credentials")
     }

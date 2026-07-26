@@ -132,7 +132,7 @@ export default function MyProjectsPage() {
                     {/* Actions */}
                     <div className="flex items-center gap-3 pt-2">
                       <Button variant="accent" className="flex-1 shadow-sm">Open Project</Button>
-                      <Button variant="outline" className="flex-1 shadow-sm" onClick={() => toast(`Team size: ${p.assignments.length}. Full team view coming soon!`, "info")}>View Team</Button>
+                      <Button variant="outline" className="flex-1 shadow-sm" onClick={() => toast(`Team size: ${project.assignments.length}. Full team view coming soon!`, "info")}>View Team</Button>
                     </div>
 
                   </CardContent>

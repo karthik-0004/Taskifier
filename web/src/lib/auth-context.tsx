@@ -10,13 +10,14 @@ import {
   type ReactNode,
 } from "react"
 
-export type Role = "MANAGER" | "EMPLOYEE"
+export type Role = "SUPER_ADMIN" | "MANAGER" | "EMPLOYEE"
 
 export interface User {
   id: string
   name: string
   email: string
   role: Role
+  permissionKeys?: string[]
 }
 
 interface AuthContextValue {
@@ -91,6 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email: data.user.email,
         name: data.user.name,
         role: data.user.role as Role,
+        permissionKeys: data.user.permissionKeys || [],
       }
 
       localStorage.setItem("user", JSON.stringify(loggedInUser))

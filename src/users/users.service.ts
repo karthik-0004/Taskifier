@@ -41,9 +41,20 @@ export class UsersService {
     return key;
   }
 
-  async create(dto: CreateUserDto) {
+  async create(dto: CreateUserDto, organizationId: string) {
     const passwordHash = await this.passwordService.hash(dto.password);
     const connectionKey = await this.generateUniqueConnectionKey();
+
+    // Verify role belongs to organization if provided
+    if (dto.organizationRoleId) {
+      const role = await this.prisma.organizationRole.findFirst({
+        where: { id: dto.organizationRoleId, organizationId }
+      });
+
+      if (!role) {
+        throw new NotFoundException('Role not found or does not belong to your organization');
+      }
+    }
 
     const user = await this.prisma.user.create({
       data: {
@@ -52,21 +63,23 @@ export class UsersService {
         name: dto.name,
         phoneNumber: dto.phoneNumber,
         position: dto.position,
-        role: Role.EMPLOYEE,
+        role: dto.organizationRoleId ? Role.MANAGER : Role.EMPLOYEE,
         githubUsername: dto.githubUsername,
         connectionKey,
+        organizationId,
+        organizationRoleId: dto.organizationRoleId,
       },
       select: userSelect,
     });
 
-    await this.emailService.sendWelcomeEmail(user.email, user.name, dto.password);
+    await this.emailService.sendWelcomeEmail(user.email, user.name, dto.password, connectionKey);
 
     return user;
   }
 
-  findAll() {
+  findAll(organizationId: string) {
     return this.prisma.user.findMany({
-      where: { role: Role.EMPLOYEE },
+      where: { role: Role.EMPLOYEE, organizationId },
       select: userSelect,
     });
   }
@@ -108,6 +121,12 @@ export class UsersService {
     if (dto.githubUsername !== undefined) data.githubUsername = dto.githubUsername;
     if (dto.password) {
       data.passwordHash = await this.passwordService.hash(dto.password);
+    }
+    
+    if (dto.organizationRoleId !== undefined) {
+      data.organizationRoleId = dto.organizationRoleId;
+      // If removed from role, downgrade to EMPLOYEE, else MANAGER
+      data.role = dto.organizationRoleId ? Role.MANAGER : Role.EMPLOYEE;
     }
 
     return this.prisma.user.update({

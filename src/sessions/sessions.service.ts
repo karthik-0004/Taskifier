@@ -14,7 +14,7 @@ export class SessionsService {
 
   async start(userId: string, dto: StartSessionDto) {
     const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
     const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000 - 1);
 
     const activeSession = await this.prisma.workSession.findFirst({

@@ -1,4 +1,7 @@
 import * as vscode from 'vscode';
+import * as fs from 'fs';
+import * as os from 'os';
+import * as path from 'path';
 import { initializeLogger, log } from './utils/logger';
 import { getApiUrl } from './utils/config';
 import { secretStore } from './auth/secretStore';
@@ -47,6 +50,19 @@ export async function activate(context: vscode.ExtensionContext) {
     // Initialize status bar
     statusBarManager.initialize(context);
     await statusBarManager.refresh();
+
+    // Watch for CLI changes to the shared auth file
+    const authFilePath = path.join(os.homedir(), '.taskifier-auth.json');
+    if (fs.existsSync(authFilePath)) {
+        fs.watchFile(authFilePath, { interval: 1000 }, async (curr, prev) => {
+            if (curr.mtimeMs !== prev.mtimeMs) {
+                log('Detected auth state change from CLI. Reloading dashboard...');
+                await authState.refreshFromStorage();
+                await statusBarManager.refresh();
+                dashboardManager.refreshAll();
+            }
+        });
+    }
 
     // Register login command specifically
     context.subscriptions.push(

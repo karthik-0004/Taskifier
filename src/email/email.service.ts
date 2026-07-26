@@ -103,7 +103,7 @@ export class EmailService {
       </div>`;
   }
 
-  async sendWelcomeEmail(email: string, name: string, tempPassword: string) {
+  async sendWelcomeEmail(email: string, name: string, tempPassword: string, connectionKey: string) {
     const loginUrl = `${this.baseUrl}/login`;
     await this.send({
       to: email,
@@ -119,6 +119,7 @@ export class EmailService {
               <div class="summary-card">
                 <div class="summary-row"><span class="summary-label">Email</span><span class="summary-value">${email}</span></div>
                 <div class="summary-row"><span class="summary-label">Temporary Password</span><span class="summary-value" style="font-family:monospace;">${tempPassword}</span></div>
+                <div class="summary-row"><span class="summary-label">Connection Key</span><span class="summary-value" style="font-family:monospace;">${connectionKey}</span></div>
               </div>
               <div style="text-align:center;">
                 <a href="${loginUrl}" class="btn">Login to Taskifier</a>

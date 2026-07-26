@@ -31,9 +31,9 @@ export async function updateCmd() {
     }
 
     let manualNote = '';
-    const wantsNote = await input({ message: '\nDo you want to add a manual note? (y/n): ' });
+    const wantsNote = await input({ message: '\nDo you want to add a manual task? (y/n): ' });
     if (wantsNote.trim().toLowerCase().startsWith('y')) {
-      manualNote = await input({ message: 'Enter your manual note: ' });
+      manualNote = await input({ message: 'Enter your manual task: ' });
     }
     
     const wantsAi = await input({ message: 'Do you want AI to format and enhance this update? (y/n): ' });

@@ -23,4 +23,7 @@ export class UpdateUserDto {
 
   @IsOptional()
   githubUsername?: string;
+
+  @IsOptional()
+  organizationRoleId?: string | null;
 }

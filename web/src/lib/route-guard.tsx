@@ -22,7 +22,10 @@ export function RouteGuard({ children, allowedRole }: RouteGuardProps) {
     }
 
     if (user && user.role !== allowedRole) {
-      const target = user.role === "MANAGER" ? "/manager/dashboard" : "/employee/dashboard"
+      const target = 
+        user.role === "SUPER_ADMIN" ? "/super-admin/dashboard" :
+        user.role === "MANAGER" ? "/manager/dashboard" : 
+        "/employee/dashboard"
       router.replace(target)
     }
   }, [hydrated, isAuthenticated, user, allowedRole, router])

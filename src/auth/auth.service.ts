@@ -17,7 +17,14 @@ export class AuthService {
   ) {}
 
   async login(email: string, password: string) {
-    const user = await this.prisma.user.findUnique({ where: { email } });
+    const user = await this.prisma.user.findUnique({ 
+      where: { email },
+      include: {
+        organizationRole: {
+          include: { permissions: true }
+        }
+      }
+    });
 
     if (!user) {
       this.logger.warn(`Login failed: user not found for email "${email}"`);
@@ -31,7 +38,16 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const payload = { sub: user.id, email: user.email, role: user.role };
+    const permissionKeys = user.organizationRole?.permissions.map(p => p.permissionKey) || [];
+
+    const payload = { 
+      sub: user.id, 
+      email: user.email, 
+      role: user.role,
+      organizationId: user.organizationId,
+      organizationRoleId: user.organizationRoleId,
+      permissionKeys
+    };
 
     const accessToken = this.jwtService.sign(payload);
     const refreshToken = this.jwtService.sign(
@@ -53,12 +69,22 @@ export class AuthService {
         phoneNumber: user.phoneNumber,
         position: user.position,
         profilePicture: user.profilePicture,
+        organizationId: user.organizationId,
+        organizationRoleId: user.organizationRoleId,
+        permissionKeys
       },
     };
   }
 
   async extensionLogin(email: string, password: string, connectionKey: string) {
-    const user = await this.prisma.user.findUnique({ where: { email } });
+    const user = await this.prisma.user.findUnique({ 
+      where: { email },
+      include: {
+        organizationRole: {
+          include: { permissions: true }
+        }
+      }
+    });
 
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
@@ -74,7 +100,16 @@ export class AuthService {
       throw new UnauthorizedException('Invalid connection key');
     }
 
-    const payload = { sub: user.id, email: user.email, role: user.role };
+    const permissionKeys = user.organizationRole?.permissions.map(p => p.permissionKey) || [];
+
+    const payload = { 
+      sub: user.id, 
+      email: user.email, 
+      role: user.role,
+      organizationId: user.organizationId,
+      organizationRoleId: user.organizationRoleId,
+      permissionKeys
+    };
 
     const accessToken = this.jwtService.sign(payload);
     const refreshToken = this.jwtService.sign(
@@ -90,6 +125,8 @@ export class AuthService {
       refreshToken,
       employeeId: user.id,
       organizationId: user.organizationId,
+      organizationRoleId: user.organizationRoleId,
+      permissionKeys,
       employee: {
         name: user.name,
         email: user.email,
@@ -106,16 +143,26 @@ export class AuthService {
 
       const user = await this.prisma.user.findUnique({
         where: { id: payload.sub },
+        include: {
+          organizationRole: {
+            include: { permissions: true }
+          }
+        }
       });
 
       if (!user) {
         throw new UnauthorizedException('Invalid refresh token');
       }
 
+      const permissionKeys = user.organizationRole?.permissions.map(p => p.permissionKey) || [];
+
       const accessToken = this.jwtService.sign({
         sub: user.id,
         email: user.email,
         role: user.role,
+        organizationId: user.organizationId,
+        organizationRoleId: user.organizationRoleId,
+        permissionKeys
       });
 
       return { accessToken };

@@ -15,6 +15,7 @@ export interface NavItem {
   href?: string
   badge?: string | number
   badgeVariant?: "default" | "success" | "warning" | "danger" | "accent"
+  permission?: string
 }
 
 interface NavConfig {
@@ -25,6 +26,7 @@ interface UserMenu {
   name: string
   email?: string
   avatar?: AvatarProps
+  permissionKeys?: string[]
 }
 
 interface AppShellProps {
@@ -100,7 +102,9 @@ export function AppShell({
         </div>
 
         <nav className="flex-1 overflow-y-auto p-2 space-y-0.5">
-          {nav.items.map((item) => {
+          {nav.items
+            .filter((item) => !item.permission || user.permissionKeys?.includes(item.permission))
+            .map((item) => {
             const active = activeNavId === item.id
             return (
               <button

@@ -8,6 +8,7 @@ import { updateCmd } from './commands/update.js';
 import { submitCmd } from './commands/submit.js';
 import { switchCmd } from './commands/switch.js';
 import { viewUpdatesCmd } from './commands/view-updates.js';
+import { commandsCmd } from './commands/commands.js';
 
 export function setupCommands(program) {
   program
@@ -60,4 +61,9 @@ export function setupCommands(program) {
     .command('view-updates')
     .description('View today\'s submitted mid-day updates')
     .action(viewUpdatesCmd);
+
+  program
+    .command('commands')
+    .description('Display a list of all available commands and their descriptions')
+    .action(commandsCmd);
 }

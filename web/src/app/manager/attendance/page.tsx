@@ -56,7 +56,9 @@ export default function ManagerAttendancePage() {
       const d = new Date(record.date)
       const dateKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
       const existing = map.get(dateKey) ?? []
-      existing.push(record)
+      if (!existing.some(e => e.userId === record.userId)) {
+        existing.push(record)
+      }
       map.set(dateKey, existing)
     }
     return map

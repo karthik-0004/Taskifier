@@ -15,6 +15,7 @@ import { ReportsModule } from './reports/reports.module';
 import { AttendanceModule } from './attendance/attendance.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { EmailModule } from './email/email.module';
+import { OrganizationModule } from './organization/organization.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { EmailModule } from './email/email.module';
     PrismaModule,
     EmailModule,
     UpdatesModule,
+    OrganizationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

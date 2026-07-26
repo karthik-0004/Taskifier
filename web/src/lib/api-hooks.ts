@@ -283,19 +283,30 @@ export function useUsers() {
   return useFetch<UserDTO[]>(() => api<UserDTO[]>("/users"))
 }
 
+export function useOrganizationRoles() {
+  return useFetch<any[]>(() => api<any[]>("/organization/roles"))
+}
+
 export function useConnectionKey() {
   return useFetch<{ connectionKey: string }>(() => api<{ connectionKey: string }>("/users/me/connection-key"))
 }
 
-export function createUser(name: string, email: string, password: string, phoneNumber?: string, position?: string) {
+export function createUser(name: string, email: string, password: string, organizationRoleId?: string, phoneNumber?: string, position?: string) {
   return api<UserDTO>("/users", {
     method: "POST",
-    body: JSON.stringify({ name, email, password, phoneNumber, position }),
+    body: JSON.stringify({ name, email, password, organizationRoleId, phoneNumber, position }),
   })
 }
 
 export function deleteUser(id: string) {
   return api(`/users/${id}`, { method: "DELETE" })
+}
+
+export function updateUser(id: string, data: Partial<UserDTO> & { organizationRoleId?: string | null }) {
+  return api<UserDTO>(`/users/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(data)
+  })
 }
 
 export function updateProfile(data: { name?: string; phoneNumber?: string; position?: string; profilePicture?: string }) {

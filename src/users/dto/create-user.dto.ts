@@ -19,4 +19,7 @@ export class CreateUserDto {
 
   @IsOptional()
   githubUsername?: string;
+
+  @IsOptional()
+  organizationRoleId?: string;
 }

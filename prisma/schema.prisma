@@ -7,8 +7,14 @@ datasource db {
 }
 
 enum Role {
+  SUPER_ADMIN
   MANAGER
   EMPLOYEE
+}
+
+enum OrganizationStatus {
+  ACTIVE
+  SUSPENDED
 }
 
 enum ProjectStatus {
@@ -70,12 +76,16 @@ model User {
   githubUsername String?
   connectionKey  String?   @unique
   organizationId String?
+  organizationRoleId String?
   resetToken    String?
   resetTokenExpiry DateTime?
   skills        String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  organization       Organization?       @relation(fields: [organizationId], references: [id])
+  organizationRole   OrganizationRole?   @relation(fields: [organizationRoleId], references: [id])
 
   projectAssignments   ProjectAssignment[]
   managedProjects      Project[]           @relation("ProjectManager")
@@ -228,4 +238,39 @@ model WorkUpdate {
 
   user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   session WorkSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+}
+
+model Organization {
+  id                    String             @id @default(uuid())
+  name                  String
+  status                OrganizationStatus @default(ACTIVE)
+  createdAt             DateTime           @default(now())
+  createdBySuperAdminId String?
+
+  users                 User[]
+  roles                 OrganizationRole[]
+}
+
+model OrganizationRole {
+  id             String   @id @default(uuid())
+  organizationId String
+  name           String
+  isOwnerRole    Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  organization   Organization                 @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  users          User[]
+  permissions    OrganizationRolePermission[]
+
+  @@unique([organizationId, name])
+}
+
+model OrganizationRolePermission {
+  id                 String @id @default(uuid())
+  organizationRoleId String
+  permissionKey      String
+
+  role OrganizationRole @relation(fields: [organizationRoleId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationRoleId, permissionKey])
 }
