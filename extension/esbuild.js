@@ -1,5 +1,6 @@
 const esbuild = require("esbuild");
-
+const fs = require("fs");
+const path = require("path");
 const production = process.argv.includes('--production');
 const watch = process.argv.includes('--watch');
 
@@ -22,6 +23,37 @@ const esbuildProblemMatcherPlugin = {
 	},
 };
 
+function copyAssets(src, dest) {
+	if (!fs.existsSync(src)) return;
+	const stat = fs.statSync(src);
+	if (stat.isDirectory()) {
+		if (!fs.existsSync(dest)) fs.mkdirSync(dest, { recursive: true });
+		const files = fs.readdirSync(src);
+		for (const file of files) {
+			copyAssets(path.join(src, file), path.join(dest, file));
+		}
+	} else {
+		if (!src.endsWith('.ts')) {
+			fs.copyFileSync(src, dest);
+		}
+	}
+}
+
+/**
+ * @type {import('esbuild').Plugin}
+ */
+const copyWebviewAssetsPlugin = {
+	name: 'copy-webview-assets',
+	setup(build) {
+		build.onEnd(() => {
+			const srcWebview = path.join(__dirname, 'src', 'dashboard', 'webview');
+			const distWebview = path.join(__dirname, 'dist', 'dashboard', 'webview');
+			copyAssets(srcWebview, distWebview);
+			console.log('[assets] Webview assets copied to dist/dashboard/webview/');
+		});
+	},
+};
+
 async function main() {
 	const ctx = await esbuild.context({
 		entryPoints: ['src/extension.ts'],
@@ -36,6 +68,7 @@ async function main() {
 		logLevel: 'silent',
 		plugins: [
 			esbuildProblemMatcherPlugin,
+			copyWebviewAssetsPlugin,
 		],
 	});
 	if (watch) {

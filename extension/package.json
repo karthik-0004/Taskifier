@@ -1,34 +1,42 @@
 {
   "name": "taskifier",
   "displayName": "Taskifier",
-  "description": "Taskifier VS Code Extension",
+  "description": "AI-powered developer productivity assistant for daily work updates, Git summaries, prompt beautification, and engineering reports.",
   "publisher": "Taskifier",
   "icon": "images/taskifier-icon.png",
   "version": "0.0.1",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Taskifier/taskifier-vscode"
+    "url": "https://github.com/karthik-0004/Taskifier"
   },
   "bugs": {
-    "url": "https://github.com/Taskifier/taskifier-vscode/issues"
+    "url": "https://github.com/karthik-0004/Taskifier"
   },
   "homepage": "https://taskifier.com",
   "keywords": [
-    "task management",
-    "productivity",
-    "developer tools",
-    "git",
-    "AI",
-    "reports",
-    "VS Code",
-    "engineering",
-    "work summary"
+  "taskifier",
+  "productivity",
+  "developer",
+  "developer tools",
+  "git",
+  "ai",
+  "prompt",
+  "prompt beautifier",
+  "work summary",
+  "daily updates",
+  "engineering",
+  "developer productivity",
+  "reports",
+  "vscode"
   ],
   "engines": {
     "vscode": "^1.74.0"
   },
   "categories": [
-    "Other"
+    "Other",
+    "Programming Languages",
+    "Productivity",
+    "AI"
   ],
   "activationEvents": [],
   "main": "./dist/extension.js",

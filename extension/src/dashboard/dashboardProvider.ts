@@ -101,7 +101,7 @@ export class DashboardProvider implements vscode.WebviewViewProvider {
 
     private _getHtmlForWebview(webview: vscode.Webview) {
         // Read the HTML shell from disk
-        const htmlPath = vscode.Uri.joinPath(this._extensionUri, 'src', 'dashboard', 'webview', 'dashboard.html');
+        const htmlPath = vscode.Uri.joinPath(this._extensionUri, 'dist', 'dashboard', 'webview', 'dashboard.html');
         let htmlContent = '';
         
         try {
