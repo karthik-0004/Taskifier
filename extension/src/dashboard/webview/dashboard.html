@@ -71,6 +71,23 @@
             display: flex;
             align-items: center;
             gap: 6px;
+            cursor: pointer;
+            user-select: none;
+            transition: color 0.2s;
+        }
+        h2:hover {
+            color: var(--tkf-text);
+        }
+        .chevron {
+            display: inline-block;
+            transition: transform 0.2s ease;
+            font-size: 10px;
+        }
+        .section.collapsed .chevron {
+            transform: rotate(-90deg);
+        }
+        .section.collapsed > *:not(h2) {
+            display: none !important;
         }
         .card {
             background-color: var(--tkf-card);
@@ -179,42 +196,200 @@
         .dot {
             width: 6px; height: 6px; border-radius: 50%; margin-right: 4px;
         }
+        
+        /* Personal Dashboard Styles */
+        .personal-header {
+            margin-bottom: 24px;
+        }
+        .personal-header-title {
+            font-size: 16px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+        .mode-badge {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background-color: rgba(35, 134, 54, 0.15);
+            color: var(--vscode-testing-iconPassed);
+            border: 1px solid rgba(35, 134, 54, 0.3);
+            text-transform: none;
+            letter-spacing: normal;
+        }
+        .personal-header-subtitle {
+            font-size: 12px;
+            color: var(--tkf-muted);
+        }
+        .prompt-textarea {
+            width: 100%;
+            min-height: 80px;
+            max-height: 300px;
+            padding: 12px;
+            box-sizing: border-box;
+            background: var(--vscode-input-background);
+            color: var(--vscode-input-foreground);
+            border: 1px solid var(--vscode-input-border);
+            border-radius: 6px;
+            font-family: var(--vscode-font-family);
+            resize: none;
+            overflow-y: auto;
+            line-height: 1.5;
+            transition: border-color 0.2s;
+        }
+        .prompt-textarea:focus {
+            outline: none;
+            border-color: var(--vscode-focusBorder);
+        }
+        .prompt-textarea.output {
+            min-height: 200px;
+            background: rgba(128,128,128,0.03);
+            cursor: text;
+        }
+        .char-counter {
+            font-size: 10px;
+            color: var(--tkf-muted);
+            text-align: right;
+        }
+        .tip-text {
+            font-size: 11px;
+            color: var(--tkf-muted);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .input-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 6px;
+            margin-bottom: 12px;
+        }
+        .btn-large {
+            padding: 10px;
+            font-size: 13px;
+            border-radius: 6px;
+            background-color: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
+            font-weight: 600;
+        }
+        .badge-gray {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background-color: var(--vscode-badge-background);
+            color: var(--vscode-badge-foreground);
+            border: 1px solid var(--tkf-border);
+        }
+        .section-header-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .btn-danger-outline {
+            background-color: transparent;
+            color: var(--vscode-errorForeground);
+            border: 1px solid var(--vscode-errorForeground);
+        }
+        .btn-danger-outline:hover {
+            background-color: rgba(241, 76, 76, 0.1);
+            transform: translateY(-1px);
+        }
+        .btn-success {
+            background-color: var(--vscode-testing-iconPassed);
+            color: #fff;
+        }
+        .btn-success:hover {
+            opacity: 0.9;
+        }
+        .btn-copy-hover {
+            transition: all 0.2s ease;
+        }
+        .btn-copy-hover:hover {
+            background-color: var(--vscode-button-background) !important;
+            color: var(--vscode-button-foreground) !important;
+            border-color: transparent !important;
+        }
+        .quick-tip-card {
+            background: rgba(128,128,128,0.04);
+            border: 1px dashed var(--tkf-border);
+            border-radius: 6px;
+            padding: 12px;
+            font-size: 11.5px;
+            color: var(--tkf-muted);
+            line-height: 1.5;
+            margin-top: 24px;
+        }
+        .quick-tip-card strong {
+            color: var(--tkf-text);
+        }
+        .system-status-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .status-box {
+            background: rgba(128,128,128,0.03);
+            border: 1px solid var(--tkf-border);
+            border-radius: 6px;
+            padding: 10px;
+        }
+        .status-box-label {
+            font-size: 11px;
+            color: var(--tkf-muted);
+            margin-bottom: 4px;
+        }
+        .status-box-value {
+            font-size: 13px;
+            font-weight: 600;
+        }
+        .status-green { color: var(--vscode-testing-iconPassed); }
+        .status-red { color: var(--vscode-errorForeground); }
     </style>
 </head>
 <body>
-    <div class="header">
-        <span class="header-title">TASKIFIER</span>
-        <button class="icon-btn" data-action="refreshDashboard" title="Refresh Dashboard">
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-                <path fill-rule="evenodd" clip-rule="evenodd" d="M13.626 3.63a7.5 7.5 0 1 0 1.258 4.707l-1-.264a6.5 6.5 0 1 1-1.077-4.084l-1.396.966-.462-.772 2.37-1.64.67-.17 1.056 2.545-.928.384-.5-1.205c-.328-.328-.67-.62-1.025-.873z"/>
-            </svg>
-        </button>
+    <div class="personal-header" id="org-header">
+        <div class="personal-header-title">
+            TASKIFIER
+            <span class="mode-badge" style="background-color: rgba(0, 122, 204, 0.15); color: var(--vscode-textLink-foreground); border-color: rgba(0, 122, 204, 0.3);">Organization Mode</span>
+            <button class="icon-btn" data-action="refreshDashboard" title="Refresh Dashboard" style="margin-left: auto;">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
+                    <path fill-rule="evenodd" clip-rule="evenodd" d="M13.626 3.63a7.5 7.5 0 1 0 1.258 4.707l-1-.264a6.5 6.5 0 1 1-1.077-4.084l-1.396.966-.462-.772 2.37-1.64.67-.17 1.056 2.545-.928.384-.5-1.205c-.328-.328-.67-.62-1.025-.873z"/>
+                </svg>
+            </button>
+        </div>
+        <div class="personal-header-subtitle">Team Productivity Management</div>
     </div>
 
     <div class="section" id="section-connection">
         <h2>🧑‍💻 Connection Status</h2>
-        <div class="content card" id="content-connection">
+        <div class="content" id="content-connection">
             <div class="placeholder-box">Loading status...</div>
         </div>
     </div>
     
     <div class="section" id="section-today-session">
         <h2>⏱️ Today's Session</h2>
-        <div class="content card" id="content-today-session">
+        <div class="content" id="content-today-session">
             <div class="placeholder-box">No session active</div>
         </div>
     </div>
     
     <div class="section" id="section-today-progress">
         <h2>📊 Today's Progress</h2>
-        <div class="content card" id="content-today-progress">
+        <div class="content" id="content-today-progress">
             <div class="placeholder-box">No updates yet</div>
         </div>
     </div>
     
     <div class="section" id="section-recent-activity">
         <h2>📝 Recent Activity</h2>
-        <div class="content card" id="content-recent-activity">
+        <div class="content" id="content-recent-activity">
             <div class="placeholder-box">Timeline empty</div>
         </div>
     </div>
@@ -228,41 +403,83 @@
     
     <div class="section" id="section-pending-actions">
         <h2>🔔 Pending Actions</h2>
-        <div class="content card" id="content-pending-actions">
+        <div class="content" id="content-pending-actions">
             <div class="placeholder-box">All caught up!</div>
         </div>
     </div>
     
     <div class="section" id="section-sync-status">
         <h2>🔄 Sync Status</h2>
-        <div class="content card" id="content-sync-status">
+        <div class="content" id="content-sync-status">
             <div class="placeholder-box">Synced</div>
+        </div>
+    </div>
+
+    <div class="section" id="section-prompt-beautifier">
+        <h2>✨ PROMPT BEAUTIFIER</h2>
+        <div>
+            <div style="font-size: 12px; margin-bottom: 6px; color: var(--tkf-muted);">Your Prompt</div>
+            <textarea id="prompt-input" class="prompt-textarea" placeholder="Type or paste your prompt here...&#10;&#10;build a home page"></textarea>
+            <div class="input-footer">
+                <div class="tip-text">💡 Tip: Be specific for better results</div>
+                <div class="char-counter" id="char-counter">0 / 2000</div>
+            </div>
+            <button class="btn btn-large" style="width: 100%;" id="btn-beautify">✨ Beautify Prompt</button>
+        </div>
+
+        <div id="section-prompt-output" style="display: none; margin-top: 16px;">
+            <div class="section-header-row">
+                <div style="font-size: 11px; font-weight: 600; color: var(--tkf-muted);">✨ BEAUTIFIED PROMPT</div>
+                <span class="badge-gray">AI Generated</span>
+            </div>
+            <textarea id="prompt-output" class="prompt-textarea output" readonly></textarea>
+            <div class="btn-row" style="margin-top: 12px; margin-bottom: 12px; display: flex; gap: 8px;">
+                <button class="btn btn-secondary btn-copy-hover" id="btn-copy" style="flex: 1;">📋 Copy</button>
+                <button class="btn btn-danger-outline" id="btn-clear" style="flex: 1; padding: 8px; border-radius: 4px; font-weight: 500;">🗑️ Clear</button>
+                <button class="btn btn-secondary" id="btn-regenerate" style="flex: 1;">🔄 Regenerate</button>
+            </div>
         </div>
     </div>
 
     <!-- Personal Mode Prompt Beautifier UI -->
     <div id="personal-dashboard" style="display: none;">
-        <div class="section" id="section-prompt-input">
-            <h2>✨ Prompt Beautifier</h2>
-            <textarea id="prompt-input" placeholder="Write or paste your prompt here...&#10;&#10;Example:&#10;Build a responsive landing page for a fintech startup." style="width: 100%; height: 100px; padding: 10px; box-sizing: border-box; background: var(--vscode-input-background); color: var(--vscode-input-foreground); border: 1px solid var(--vscode-input-border); border-radius: 4px; font-family: var(--vscode-font-family); resize: vertical; margin-bottom: 8px;"></textarea>
-            <button class="btn" style="width: 100%;" id="btn-beautify">Beautify Prompt</button>
-        </div>
-
-        <div class="section" id="section-prompt-output" style="display: none;">
-            <h2>📝 Beautified Prompt</h2>
-            <textarea id="prompt-output" readonly style="width: 100%; height: 120px; padding: 10px; box-sizing: border-box; background: rgba(128,128,128,0.05); color: var(--vscode-input-foreground); border: 1px solid var(--vscode-input-border); border-radius: 4px; font-family: var(--vscode-font-family); resize: vertical; margin-bottom: 8px; cursor: text;"></textarea>
-            <div class="btn-row" style="margin-bottom: 24px;">
-                <button class="btn" id="btn-copy">Copy</button>
-                <button class="btn btn-secondary" id="btn-regenerate">Regenerate</button>
-                <button class="btn btn-secondary" id="btn-clear" style="background-color: var(--vscode-errorForeground); color: white;">Clear</button>
+        <div class="personal-header">
+            <div class="personal-header-title">
+                TASKIFIER
+                <span class="mode-badge">Personal Mode</span>
             </div>
+            <div class="personal-header-subtitle">AI Productivity Assistant</div>
         </div>
 
         <div class="section" id="section-system-status">
-            <h2>⚙️ System Status</h2>
-            <div class="content card" id="content-system-status">
+            <h2>⚙️ SYSTEM STATUS</h2>
+            <div id="content-system-status">
                 <div class="placeholder-box">Loading status...</div>
             </div>
+        </div>
+
+        <div class="section" id="section-ai-recommendation" style="display: none;">
+            <h2>🚀 UNLOCK AI FEATURES</h2>
+            <div id="ai-recommendation-card" class="quick-tip-card" style="border: 1px solid rgba(0, 122, 204, 0.4); background: rgba(0, 122, 204, 0.05); margin-bottom: 24px; margin-top: 0;">
+                <div style="margin-bottom: 12px; color: var(--vscode-foreground);">Taskifier can enhance your prompts, generate professional work updates, and improve your daily reports using AI. Configure an AI provider to enable these features.</div>
+                
+                <div style="background: rgba(128,128,128,0.05); padding: 10px; border-radius: 4px; border: 1px solid var(--tkf-border); margin-bottom: 12px;">
+                    <strong style="color: var(--tkf-text);">Recommended: OpenRouter</strong><br>
+                    • Free models available<br>
+                    • Supports OpenAI, Claude, Gemini, DeepSeek, Llama, and many more<br>
+                    • One API key for multiple AI providers
+                </div>
+                
+                <div style="display: flex; gap: 8px;">
+                    <button class="btn btn-secondary" data-action="openOpenRouter" style="flex: 1;">Get Free API Key</button>
+                    <button class="btn btn-success" data-command="taskifier.aiSetup" style="flex: 1;">Configure AI</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="quick-tip-card" style="margin-top: 0;">
+            💡 <strong>Quick Tip</strong><br><br>
+            Select any text inside the editor and right click <strong>Taskifier Prompt Beautifier</strong> to instantly improve prompts without opening the dashboard.
         </div>
     </div>
 
@@ -284,7 +501,21 @@
         });
         
         let currentOriginalPrompt = '';
+        const promptInputEl = document.getElementById('prompt-input');
+        const charCounterEl = document.getElementById('char-counter');
         
+        promptInputEl?.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+            const len = this.value.length;
+            charCounterEl.innerText = len + ' / 2000';
+            if (len > 2000) {
+                charCounterEl.style.color = 'var(--vscode-errorForeground)';
+            } else {
+                charCounterEl.style.color = 'var(--tkf-muted)';
+            }
+        });
+
         document.getElementById('btn-beautify')?.addEventListener('click', () => {
             const promptInput = document.getElementById('prompt-input').value.trim();
             if (!promptInput) {
@@ -292,14 +523,14 @@
                 return;
             }
             currentOriginalPrompt = promptInput;
-            document.getElementById('btn-beautify').innerText = 'Beautifying...';
+            document.getElementById('btn-beautify').innerText = '✨ Beautifying...';
             document.getElementById('btn-beautify').disabled = true;
             vscode.postMessage({ command: 'beautifyPrompt', text: promptInput });
         });
 
         document.getElementById('btn-regenerate')?.addEventListener('click', () => {
             if (!currentOriginalPrompt) return;
-            document.getElementById('btn-regenerate').innerText = 'Regenerating...';
+            document.getElementById('btn-regenerate').innerText = '🔄 Regenerating...';
             document.getElementById('btn-regenerate').disabled = true;
             vscode.postMessage({ command: 'beautifyPrompt', text: currentOriginalPrompt });
         });
@@ -310,10 +541,15 @@
         });
 
         document.getElementById('btn-clear')?.addEventListener('click', () => {
-            document.getElementById('prompt-input').value = '';
+            promptInputEl.value = '';
             document.getElementById('prompt-output').value = '';
             document.getElementById('section-prompt-output').style.display = 'none';
             currentOriginalPrompt = '';
+            
+            // reset char counter & height
+            promptInputEl.style.height = 'auto';
+            charCounterEl.innerText = '0 / 2000';
+            charCounterEl.style.color = 'var(--tkf-muted)';
         });
         
         // Listen for messages from the extension
@@ -323,19 +559,26 @@
             switch (message.command) {
                 case 'beautifiedResult':
                     if (message.error) {
-                        document.getElementById('btn-beautify').innerText = 'Beautify Prompt';
+                        document.getElementById('btn-beautify').innerText = '✨ Beautify Prompt';
                         document.getElementById('btn-beautify').disabled = false;
-                        document.getElementById('btn-regenerate').innerText = 'Regenerate';
+                        document.getElementById('btn-regenerate').innerText = '🔄 Regenerate';
                         document.getElementById('btn-regenerate').disabled = false;
                         return;
                     }
                     
-                    document.getElementById('prompt-output').value = message.text;
+                    const outEl = document.getElementById('prompt-output');
+                    outEl.value = message.text;
                     document.getElementById('section-prompt-output').style.display = 'block';
                     
-                    document.getElementById('btn-beautify').innerText = 'Beautify Prompt';
+                    // auto expand output
+                    setTimeout(() => {
+                        outEl.style.height = 'auto';
+                        outEl.style.height = Math.min(outEl.scrollHeight, 400) + 'px';
+                    }, 10);
+                    
+                    document.getElementById('btn-beautify').innerText = '✨ Beautify Prompt';
                     document.getElementById('btn-beautify').disabled = false;
-                    document.getElementById('btn-regenerate').innerText = 'Regenerate';
+                    document.getElementById('btn-regenerate').innerText = '🔄 Regenerate';
                     document.getElementById('btn-regenerate').disabled = false;
                     break;
                     
@@ -358,28 +601,46 @@
                         // System Status
                         const aiConfigured = !!data.aiConfig;
                         let sysHtml = `
-                            <div style="display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 11px;">
-                                <div style="opacity: 0.8;">Mode</div>
-                                <div style="font-weight: 600;">Personal</div>
-                                
-                                <div style="opacity: 0.8;">Git</div>
-                                <div style="color: var(--vscode-testing-iconPassed); font-weight: 600;">&#10004; Connected</div>
-                                
-                                <div style="opacity: 0.8;">AI</div>
-                                <div style="color: ${aiConfigured ? 'var(--vscode-testing-iconPassed)' : 'var(--vscode-errorForeground)'}; font-weight: 600;">
-                                    ${aiConfigured ? '&#10004; ' + data.aiConfig.provider : '&#9888; Not Configured'}
+                            <div class="system-status-grid">
+                                <div class="status-box">
+                                    <div class="status-box-label">Mode</div>
+                                    <div class="status-box-value status-green">Personal</div>
                                 </div>
-                                
-                                <div style="opacity: 0.8;">Reports</div>
-                                <div style="color: var(--vscode-testing-iconPassed); font-weight: 600;">Ready</div>
+                                <div class="status-box">
+                                    <div class="status-box-label">Git</div>
+                                    <div class="status-box-value status-green">&#10004; Connected</div>
+                                </div>
+                                <div class="status-box">
+                                    <div class="status-box-label">AI Provider</div>
+                                    <div class="status-box-value ${aiConfigured ? 'status-green' : 'status-red'}">
+                                        ${aiConfigured ? data.aiConfig.provider : 'Not Configured'}
+                                    </div>
+                                </div>
+                                <div class="status-box">
+                                    <div class="status-box-label">Reports</div>
+                                    <div class="status-box-value status-green">Ready</div>
+                                </div>
                             </div>
                         `;
                         document.getElementById('content-system-status').innerHTML = sysHtml;
                         
+                        const recCard = document.getElementById('section-ai-recommendation');
+                        if (recCard) {
+                            recCard.style.display = aiConfigured ? 'none' : 'block';
+                        }
+                        
+                        // Move shared prompt beautifier into personal mode layout
+                        document.getElementById('personal-dashboard').insertBefore(
+                            document.getElementById('section-prompt-beautifier'),
+                            document.getElementById('section-system-status')
+                        );
+                        document.getElementById('section-prompt-beautifier').style.display = 'block';
+
                         return; // Stop processing org logic
                     } else {
                         // Ensure personal is hidden if switching to org
                         document.getElementById('personal-dashboard').style.display = 'none';
+                        document.getElementById('org-header').style.display = 'block';
                         document.getElementById('section-connection').style.display = 'block';
                         document.getElementById('section-today-session').style.display = 'block';
                         document.getElementById('section-today-progress').style.display = 'block';
@@ -387,6 +648,10 @@
                         document.getElementById('section-quick-actions').style.display = 'block';
                         document.getElementById('section-pending-actions').style.display = 'block';
                         document.getElementById('section-sync-status').style.display = 'block';
+                        
+                        // Append prompt beautifier at the end of org mode
+                        document.body.appendChild(document.getElementById('section-prompt-beautifier'));
+                        document.getElementById('section-prompt-beautifier').style.display = 'block';
                     }
                     
                     if (!data.loggedIn || data.backendStatus === 'Unreachable') {
@@ -405,15 +670,29 @@
 
                     // Connection Status
                     let connHtml = `
-                        <div style="color: var(--vscode-testing-iconPassed); font-weight: 600;">&#10004; Connected</div>
-                        <div>User: <strong>${data.employee?.name}</strong></div>
-                        <div style="font-size: 11px; opacity: 0.8; margin-top: 2px; margin-bottom: 4px;">Email: ${data.employee?.email || ''}</div>
-                        <div>Organization: ${data.employee?.organizationId ? 'Assigned' : 'Not yet assigned'}</div>
+                        <div class="system-status-grid">
+                            <div class="status-box">
+                                <div class="status-box-label">Status</div>
+                                <div class="status-box-value status-green">&#10004; Connected</div>
+                            </div>
+                            <div class="status-box">
+                                <div class="status-box-label">User</div>
+                                <div class="status-box-value">${data.employee?.name || 'Unknown'}</div>
+                            </div>
+                            <div class="status-box" style="grid-column: span 2;">
+                                <div class="status-box-label">Email</div>
+                                <div class="status-box-value">${data.employee?.email || ''}</div>
+                            </div>
+                            <div class="status-box" style="grid-column: span 2;">
+                                <div class="status-box-label">Organization</div>
+                                <div class="status-box-value" style="color: ${data.employee?.organizationId ? 'var(--vscode-testing-iconPassed)' : 'var(--tkf-muted)'};">${data.employee?.organizationId ? 'Assigned' : 'Not yet assigned'}</div>
+                            </div>
+                        </div>
                     `;
                     document.getElementById('content-connection').innerHTML = connHtml;
 
                     // Today's Session
-                    let sessionHtml = '';
+                    let sessionHtml = '<div class="system-status-grid">';
                     if (!data.attendance?.checkedInAt) {
                         sessionHtml = `
                             <div style="color: var(--vscode-descriptionForeground);">Not checked in yet.</div>
@@ -422,17 +701,30 @@
                     } else {
                         const checkInTime = new Date(data.attendance.checkedInAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                         const checkInSource = data.attendance.checkInSource || 'CLI';
-                        sessionHtml += `<div>Checked in: <strong>${checkInTime}</strong> <span class="badge" style="margin-left: 6px;">${checkInSource}</span></div>`;
+                        sessionHtml += `
+                            <div class="status-box">
+                                <div class="status-box-label">Checked In</div>
+                                <div class="status-box-value">${checkInTime} <span class="badge" style="font-weight:normal; font-size:9px;">${checkInSource}</span></div>
+                            </div>
+                        `;
                         
                         if (data.activeSession) {
                             const startTime = new Date(data.activeSession.startedAt);
                             const startTimeStr = startTime.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
                             sessionHtml += `
-                                <div style="color: var(--vscode-testing-iconPassed); margin-top: 6px; font-weight: 600;">
-                                    ▶ Active: ${data.activeSession.projectName}
+                                <div class="status-box">
+                                    <div class="status-box-label">Started At</div>
+                                    <div class="status-box-value">${startTimeStr}</div>
                                 </div>
-                                <div style="color: var(--tkf-muted); font-size: 11px;">Started at: ${startTimeStr}</div>
-                                <div style="font-family: var(--vscode-editor-font-family); font-size: 24px; margin-top: 8px; font-variant-numeric: tabular-nums; font-weight: 700; color: var(--tkf-primary);" id="live-timer">00:00:00</div>
+                                <div class="status-box" style="grid-column: span 2;">
+                                    <div class="status-box-label">Active Project</div>
+                                    <div class="status-box-value status-green">▶ ${data.activeSession.projectName}</div>
+                                </div>
+                                <div class="status-box" style="grid-column: span 2; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px;">
+                                    <div class="status-box-label">Live Session Time</div>
+                                    <div style="font-family: var(--vscode-editor-font-family); font-size: 32px; margin-top: 4px; font-variant-numeric: tabular-nums; font-weight: 700; color: var(--tkf-primary);" id="live-timer">00:00:00</div>
+                                </div>
+                            </div>
                             `;
                             
                             // start timer
@@ -456,15 +748,29 @@
                                 : 'Unknown';
                             const checkOutSource = data.attendance.checkOutSource || 'CLI';
                             sessionHtml += `
-                                <div style="color: var(--vscode-testing-iconPassed); margin-top: 6px;">
-                                    &#10004; Completed: <strong>${data.lastEndedSession.projectName}</strong>
+                                <div class="status-box">
+                                    <div class="status-box-label">Checked Out</div>
+                                    <div class="status-box-value">${checkOutTime} <span class="badge" style="font-weight:normal; font-size:9px;">${checkOutSource}</span></div>
                                 </div>
-                                <div>Checked out: ${checkOutTime} <span class="badge" style="margin-left: 6px;">${checkOutSource}</span></div>
-                                <div>Duration: <strong>${h}h ${m}m</strong></div>
+                                <div class="status-box" style="grid-column: span 2;">
+                                    <div class="status-box-label">Completed Project</div>
+                                    <div class="status-box-value status-green">&#10004; ${data.lastEndedSession.projectName}</div>
+                                </div>
+                                <div class="status-box" style="grid-column: span 2; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px;">
+                                    <div class="status-box-label">Total Session Time</div>
+                                    <div style="font-family: var(--vscode-editor-font-family); font-size: 28px; margin-top: 4px; font-variant-numeric: tabular-nums; font-weight: 700; color: var(--vscode-foreground);">${h}h ${m}m</div>
+                                </div>
+                            </div>
                             `;
                         } else {
                             if (window.activeTimer) clearInterval(window.activeTimer);
-                            sessionHtml += `<div style="margin-top: 6px; color: var(--vscode-descriptionForeground);">Session not started</div>`;
+                            sessionHtml += `
+                                <div class="status-box">
+                                    <div class="status-box-label">Status</div>
+                                    <div class="status-box-value" style="color: var(--tkf-muted);">Session not started</div>
+                                </div>
+                            </div>
+                            `;
                         }
                     }
                     document.getElementById('content-today-session').innerHTML = sessionHtml;
@@ -613,20 +919,26 @@
 
         function renderSyncStatus(data) {
             let syncHtml = `
-                <div style="display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 11px;">
-                    <div style="opacity: 0.8;">Backend</div>
-                    <div style="color: ${data.backendStatus === 'Connected' ? 'var(--vscode-testing-iconPassed)' : 'var(--vscode-errorForeground)'}; font-weight: 600;">
-                        ${data.backendStatus || 'Disconnected'}
+                <div class="system-status-grid">
+                    <div class="status-box">
+                        <div class="status-box-label">Backend</div>
+                        <div class="status-box-value" style="color: ${data.backendStatus === 'Connected' ? 'var(--vscode-testing-iconPassed)' : 'var(--vscode-errorForeground)'};">
+                            ${data.backendStatus || 'Disconnected'}
+                        </div>
                     </div>
                     
-                    <div style="opacity: 0.8;">Git</div>
-                    <div style="color: ${!data.unsyncedCommitsCount || data.unsyncedCommitsCount === 0 ? 'var(--vscode-testing-iconPassed)' : 'var(--vscode-editorWarning-foreground)'}; font-weight: 600;">
-                        ${!data.unsyncedCommitsCount || data.unsyncedCommitsCount === 0 ? 'Synced' : data.unsyncedCommitsCount + ' pending'}
+                    <div class="status-box">
+                        <div class="status-box-label">Git</div>
+                        <div class="status-box-value" style="color: ${!data.unsyncedCommitsCount || data.unsyncedCommitsCount === 0 ? 'var(--vscode-testing-iconPassed)' : 'var(--vscode-editorWarning-foreground)'};">
+                            ${!data.unsyncedCommitsCount || data.unsyncedCommitsCount === 0 ? 'Synced' : data.unsyncedCommitsCount + ' pending'}
+                        </div>
                     </div>
                     
-                    <div style="opacity: 0.8;">AI Model</div>
-                    <div style="color: ${data.aiStatus === 'Available' ? 'var(--vscode-testing-iconPassed)' : 'var(--vscode-errorForeground)'}; font-weight: 600;">
-                        ${data.aiStatus || 'Unavailable'}
+                    <div class="status-box" style="grid-column: span 2;">
+                        <div class="status-box-label">AI Model</div>
+                        <div class="status-box-value" style="color: ${data.aiStatus === 'Available' ? 'var(--vscode-testing-iconPassed)' : 'var(--vscode-errorForeground)'};">
+                            ${data.aiStatus || 'Unavailable'}
+                        </div>
                     </div>
                 </div>
             `;
@@ -640,6 +952,32 @@
 
             document.getElementById('content-sync-status').innerHTML = syncHtml;
         }
+        
+        // Collapsible sections init
+        const viewState = vscode.getState() || { collapsed: {} };
+        document.querySelectorAll('.section').forEach(section => {
+            const h2 = section.querySelector('h2');
+            if (!h2) return;
+            
+            // Add chevron if not already there
+            if (!h2.querySelector('.chevron')) {
+                const chev = document.createElement('span');
+                chev.className = 'chevron';
+                chev.innerText = '▼';
+                h2.prepend(chev);
+                
+                // Set initial state
+                if (viewState.collapsed[section.id]) {
+                    section.classList.add('collapsed');
+                }
+                
+                h2.addEventListener('click', () => {
+                    section.classList.toggle('collapsed');
+                    viewState.collapsed[section.id] = section.classList.contains('collapsed');
+                    vscode.setState(viewState);
+                });
+            }
+        });
     </script>
 </body>
 </html>

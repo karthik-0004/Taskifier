@@ -41,6 +41,9 @@ export class DashboardProvider implements vscode.WebviewViewProvider {
                 case 'refreshDashboard':
                     this._onRefresh();
                     break;
+                case 'openOpenRouter':
+                    vscode.env.openExternal(vscode.Uri.parse('https://openrouter.ai/'));
+                    break;
                 case 'showError':
                     vscode.window.showErrorMessage(message.message);
                     break;
