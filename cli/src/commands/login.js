@@ -20,13 +20,44 @@ export async function loginCmd() {
   }
 
   try {
-    const mode = await select({
-      message: 'Who are you using Taskifier as?',
-      choices: [
-        { name: 'Organization', value: 'organization', description: 'Connect to an existing Taskifier Organization via backend' },
-        { name: 'Personal', value: 'personal', description: 'Standalone offline AI tracking' }
-      ]
-    });
+    let mode;
+    while (true) {
+      mode = await select({
+        message: 'Who are you using Taskifier as?',
+        choices: [
+          { name: 'Organization (Coming Soon)', value: 'organization', description: 'Connect to an existing Taskifier Organization via backend' },
+          { name: 'Personal', value: 'personal', description: 'Standalone offline AI tracking' }
+        ]
+      });
+
+      if (mode === 'organization') {
+        const isDevMode = process.env.TASKIFIER_DEV_MODE === 'true' || process.env.NODE_ENV === 'development';
+        if (isDevMode) {
+          console.log(chalk.blue('\nDevelopment Mode Detected: Bypassing Marketplace Organization Restriction...'));
+          break;
+        }
+
+        console.log(chalk.yellow('\nOrganization Mode is currently unavailable in the public Marketplace release.'));
+        console.log(chalk.gray('This feature is under active development and will be available in a future update.'));
+        console.log(chalk.gray('For now, please use Personal Mode.\n'));
+        
+        const orgAction = await select({
+          message: 'What would you like to do?',
+          choices: [
+            { name: 'Go Back', value: 'back' },
+            { name: 'Exit', value: 'exit' }
+          ]
+        });
+        
+        if (orgAction === 'back') {
+          console.log('\n');
+          continue;
+        } else {
+          return;
+        }
+      }
+      break;
+    }
 
     if (mode === 'organization') {
       const emailStr = await input({ message: 'Enter your Taskifier email:' });

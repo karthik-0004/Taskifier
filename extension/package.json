@@ -2,8 +2,28 @@
   "name": "taskifier",
   "displayName": "Taskifier",
   "description": "Taskifier VS Code Extension",
+  "publisher": "Taskifier",
   "icon": "images/taskifier-icon.png",
   "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Taskifier/taskifier-vscode"
+  },
+  "bugs": {
+    "url": "https://github.com/Taskifier/taskifier-vscode/issues"
+  },
+  "homepage": "https://taskifier.com",
+  "keywords": [
+    "task management",
+    "productivity",
+    "developer tools",
+    "git",
+    "AI",
+    "reports",
+    "VS Code",
+    "engineering",
+    "work summary"
+  ],
   "engines": {
     "vscode": "^1.74.0"
   },
