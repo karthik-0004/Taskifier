@@ -14,6 +14,7 @@ Taskifier is an intelligent engineering companion designed to eliminate the over
 ## Features
 
 * **Personal Mode:** 100% offline, private tracking and reporting.
+* **Prompt Beautifier:** Instantly upgrade your AI prompts by right-clicking text or using the dedicated Personal Dashboard.
 * **AI-Powered Summaries:** Transform raw technical commits into professional, manager-ready updates.
 * **Git Commit Scanning:** Automatically scans your local repository for today's work.
 * **Manual Work Updates:** Append blockers and tomorrow's plans easily.
@@ -45,6 +46,21 @@ t update
 t submit
 ```
 
+## Using Prompt Beautifier
+
+Taskifier includes a powerful built-in tool to instantly improve and format your prompts before sending them to AI. You can access it in two ways:
+
+**1. Directly in the Text Editor (Right-Click):**
+* Highlight any text inside your code editor.
+* Right-click the highlighted text.
+* Select **Taskifier Prompt Beautifier** from the context menu.
+* A Side-by-Side Diff Editor will open, allowing you to review, regenerate, or replace your text seamlessly.
+
+**2. From the Taskifier Dashboard (Personal Mode):**
+* Open the Taskifier extension sidebar.
+* Ensure you are logged into **Personal Mode**.
+* The sidebar will display a dedicated Prompt Beautifier widget where you can paste, beautify, and copy your optimized prompts entirely within the panel.
+
 ## Commands
 
 Taskifier offers a globally accessible CLI (`t`) to interact with your workspace:
@@ -56,6 +72,7 @@ Taskifier offers a globally accessible CLI (`t`) to interact with your workspace
 | `t update` | Generate work updates from your Git commits |
 | `t view-updates` | View today's updates |
 | `t submit` | Generate and export your daily report |
+| `Taskifier: Prompt Beautifier` | Format and upgrade highlighted AI prompts (VS Code Command Palette) |
 | `t ai setup` | Configure your local AI provider |
 | `t logout` | Logout and clear your session |
 | `t commands` | Display all available commands |

@@ -105,6 +105,11 @@ class SecretStore {
         const config = await this.getSharedConfig();
         return !!config.accessToken;
     }
+
+    public async getMode(): Promise<'organization' | 'personal'> {
+        const config = await this.getSharedConfig();
+        return config.mode || 'organization';
+    }
 }
 
 export const secretStore = new SecretStore();

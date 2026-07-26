@@ -97,8 +97,21 @@
         "command": "taskifier.logout",
         "title": "Taskifier: Logout",
         "category": "Taskifier"
+      },
+      {
+        "command": "taskifier.beautifyPrompt",
+        "title": "Taskifier Prompt Beautifier",
+        "category": "Taskifier"
       }
-    ]
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "taskifier.beautifyPrompt",
+          "group": "navigation"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run package",

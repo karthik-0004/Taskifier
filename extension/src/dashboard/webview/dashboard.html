@@ -240,6 +240,32 @@
         </div>
     </div>
 
+    <!-- Personal Mode Prompt Beautifier UI -->
+    <div id="personal-dashboard" style="display: none;">
+        <div class="section" id="section-prompt-input">
+            <h2>✨ Prompt Beautifier</h2>
+            <textarea id="prompt-input" placeholder="Write or paste your prompt here...&#10;&#10;Example:&#10;Build a responsive landing page for a fintech startup." style="width: 100%; height: 100px; padding: 10px; box-sizing: border-box; background: var(--vscode-input-background); color: var(--vscode-input-foreground); border: 1px solid var(--vscode-input-border); border-radius: 4px; font-family: var(--vscode-font-family); resize: vertical; margin-bottom: 8px;"></textarea>
+            <button class="btn" style="width: 100%;" id="btn-beautify">Beautify Prompt</button>
+        </div>
+
+        <div class="section" id="section-prompt-output" style="display: none;">
+            <h2>📝 Beautified Prompt</h2>
+            <textarea id="prompt-output" readonly style="width: 100%; height: 120px; padding: 10px; box-sizing: border-box; background: rgba(128,128,128,0.05); color: var(--vscode-input-foreground); border: 1px solid var(--vscode-input-border); border-radius: 4px; font-family: var(--vscode-font-family); resize: vertical; margin-bottom: 8px; cursor: text;"></textarea>
+            <div class="btn-row" style="margin-bottom: 24px;">
+                <button class="btn" id="btn-copy">Copy</button>
+                <button class="btn btn-secondary" id="btn-regenerate">Regenerate</button>
+                <button class="btn btn-secondary" id="btn-clear" style="background-color: var(--vscode-errorForeground); color: white;">Clear</button>
+            </div>
+        </div>
+
+        <div class="section" id="section-system-status">
+            <h2>⚙️ System Status</h2>
+            <div class="content card" id="content-system-status">
+                <div class="placeholder-box">Loading status...</div>
+            </div>
+        </div>
+    </div>
+
     <script nonce="{{nonce}}">
         const vscode = acquireVsCodeApi();
 
@@ -257,13 +283,111 @@
             }
         });
         
+        let currentOriginalPrompt = '';
+        
+        document.getElementById('btn-beautify')?.addEventListener('click', () => {
+            const promptInput = document.getElementById('prompt-input').value.trim();
+            if (!promptInput) {
+                vscode.postMessage({ command: 'showError', message: 'Please enter a prompt before beautifying.' });
+                return;
+            }
+            currentOriginalPrompt = promptInput;
+            document.getElementById('btn-beautify').innerText = 'Beautifying...';
+            document.getElementById('btn-beautify').disabled = true;
+            vscode.postMessage({ command: 'beautifyPrompt', text: promptInput });
+        });
+
+        document.getElementById('btn-regenerate')?.addEventListener('click', () => {
+            if (!currentOriginalPrompt) return;
+            document.getElementById('btn-regenerate').innerText = 'Regenerating...';
+            document.getElementById('btn-regenerate').disabled = true;
+            vscode.postMessage({ command: 'beautifyPrompt', text: currentOriginalPrompt });
+        });
+
+        document.getElementById('btn-copy')?.addEventListener('click', () => {
+            const output = document.getElementById('prompt-output').value;
+            vscode.postMessage({ command: 'copyToClipboard', text: output });
+        });
+
+        document.getElementById('btn-clear')?.addEventListener('click', () => {
+            document.getElementById('prompt-input').value = '';
+            document.getElementById('prompt-output').value = '';
+            document.getElementById('section-prompt-output').style.display = 'none';
+            currentOriginalPrompt = '';
+        });
+        
         // Listen for messages from the extension
         window.addEventListener('message', event => {
             const message = event.data;
             
             switch (message.command) {
+                case 'beautifiedResult':
+                    if (message.error) {
+                        document.getElementById('btn-beautify').innerText = 'Beautify Prompt';
+                        document.getElementById('btn-beautify').disabled = false;
+                        document.getElementById('btn-regenerate').innerText = 'Regenerate';
+                        document.getElementById('btn-regenerate').disabled = false;
+                        return;
+                    }
+                    
+                    document.getElementById('prompt-output').value = message.text;
+                    document.getElementById('section-prompt-output').style.display = 'block';
+                    
+                    document.getElementById('btn-beautify').innerText = 'Beautify Prompt';
+                    document.getElementById('btn-beautify').disabled = false;
+                    document.getElementById('btn-regenerate').innerText = 'Regenerate';
+                    document.getElementById('btn-regenerate').disabled = false;
+                    break;
+                    
                 case 'updateDashboard':
                     const data = message.data;
+                    
+                    if (data.mode === 'personal') {
+                        // Hide org sections
+                        document.getElementById('section-connection').style.display = 'none';
+                        document.getElementById('section-today-session').style.display = 'none';
+                        document.getElementById('section-today-progress').style.display = 'none';
+                        document.getElementById('section-recent-activity').style.display = 'none';
+                        document.getElementById('section-quick-actions').style.display = 'none';
+                        document.getElementById('section-pending-actions').style.display = 'none';
+                        document.getElementById('section-sync-status').style.display = 'none';
+                        
+                        // Show personal
+                        document.getElementById('personal-dashboard').style.display = 'block';
+                        
+                        // System Status
+                        const aiConfigured = !!data.aiConfig;
+                        let sysHtml = `
+                            <div style="display: grid; grid-template-columns: auto 1fr; gap: 8px 16px; font-size: 11px;">
+                                <div style="opacity: 0.8;">Mode</div>
+                                <div style="font-weight: 600;">Personal</div>
+                                
+                                <div style="opacity: 0.8;">Git</div>
+                                <div style="color: var(--vscode-testing-iconPassed); font-weight: 600;">&#10004; Connected</div>
+                                
+                                <div style="opacity: 0.8;">AI</div>
+                                <div style="color: ${aiConfigured ? 'var(--vscode-testing-iconPassed)' : 'var(--vscode-errorForeground)'}; font-weight: 600;">
+                                    ${aiConfigured ? '&#10004; ' + data.aiConfig.provider : '&#9888; Not Configured'}
+                                </div>
+                                
+                                <div style="opacity: 0.8;">Reports</div>
+                                <div style="color: var(--vscode-testing-iconPassed); font-weight: 600;">Ready</div>
+                            </div>
+                        `;
+                        document.getElementById('content-system-status').innerHTML = sysHtml;
+                        
+                        return; // Stop processing org logic
+                    } else {
+                        // Ensure personal is hidden if switching to org
+                        document.getElementById('personal-dashboard').style.display = 'none';
+                        document.getElementById('section-connection').style.display = 'block';
+                        document.getElementById('section-today-session').style.display = 'block';
+                        document.getElementById('section-today-progress').style.display = 'block';
+                        document.getElementById('section-recent-activity').style.display = 'block';
+                        document.getElementById('section-quick-actions').style.display = 'block';
+                        document.getElementById('section-pending-actions').style.display = 'block';
+                        document.getElementById('section-sync-status').style.display = 'block';
+                    }
                     
                     if (!data.loggedIn || data.backendStatus === 'Unreachable') {
                         document.getElementById('content-connection').innerHTML = '<div style="color: var(--vscode-errorForeground);">' + (data.error || 'Not Connected') + '</div>';

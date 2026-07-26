@@ -1,5 +1,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
+import { getAIConfig, promptAISetup } from '../utils/aiConfig';
+import { enhancePrompt } from '../utils/aiClient';
 
 export class DashboardProvider implements vscode.WebviewViewProvider {
     public static readonly viewType = 'taskifier.dashboard';
@@ -39,8 +41,50 @@ export class DashboardProvider implements vscode.WebviewViewProvider {
                 case 'refreshDashboard':
                     this._onRefresh();
                     break;
+                case 'showError':
+                    vscode.window.showErrorMessage(message.message);
+                    break;
+                case 'copyToClipboard':
+                    vscode.env.clipboard.writeText(message.text);
+                    vscode.window.showInformationMessage('✓ Prompt copied to clipboard.');
+                    break;
+                case 'beautifyPrompt':
+                    this._handleBeautifyPrompt(message.text);
+                    break;
             }
         });
+    }
+
+    private async _handleBeautifyPrompt(text: string) {
+        let config = getAIConfig();
+        if (!config) {
+            const choice = await vscode.window.showInformationMessage(
+                "Taskifier Prompt Beautifier requires AI.",
+                "Configure AI Now", "Maybe Later", "Cancel"
+            );
+            
+            if (choice === "Configure AI Now") {
+                const success = await promptAISetup();
+                if (success) {
+                    config = getAIConfig();
+                    this._onRefresh(); // To update AI status in dashboard
+                } else {
+                    this._view?.webview.postMessage({ command: 'beautifiedResult', error: true });
+                    return;
+                }
+            } else {
+                this._view?.webview.postMessage({ command: 'beautifiedResult', error: true });
+                return;
+            }
+        }
+
+        try {
+            const beautifiedText = await enhancePrompt(text);
+            this._view?.webview.postMessage({ command: 'beautifiedResult', text: beautifiedText });
+        } catch (err: any) {
+            vscode.window.showErrorMessage(`Unable to contact AI Provider. ${err.message}`);
+            this._view?.webview.postMessage({ command: 'beautifiedResult', error: true });
+        }
     }
 
     /**

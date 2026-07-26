@@ -18,6 +18,7 @@ import { submitSummaryCommand } from './commands/submitSummary';
 import { viewUpdatesCommand } from './commands/viewUpdates';
 import { viewPreviousSummaryCommand } from './commands/viewPreviousSummary';
 import { updateState } from './state/updateState';
+import { beautifyPromptCommand } from './commands/beautifyPrompt';
 import { gitCollector } from './git/gitCollector';
 import { ApiClient } from './api/client';
 import { dashboardManager } from './dashboard/dashboardManager';
@@ -59,7 +60,7 @@ export async function activate(context: vscode.ExtensionContext) {
                 log('Detected auth state change from CLI. Reloading dashboard...');
                 await authState.refreshFromStorage();
                 await statusBarManager.refresh();
-                dashboardManager.refreshAll();
+                dashboardManager.refresh();
             }
         });
     }
@@ -114,8 +115,10 @@ export async function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('taskifier.viewPreviousSummary', viewPreviousSummaryCommand)
     );
 
-
-
+    // Register beautify prompt command
+    context.subscriptions.push(
+        vscode.commands.registerCommand('taskifier.beautifyPrompt', beautifyPromptCommand)
+    );
     context.subscriptions.push(
         vscode.workspace.onDidChangeConfiguration(e => {
             if (e.affectsConfiguration('taskifier.apiUrl')) {

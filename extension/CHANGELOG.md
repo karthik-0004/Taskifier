@@ -7,6 +7,7 @@ All notable changes to the "taskifier" extension will be documented in this file
 ### Added
 
 * Initial Release of the Taskifier VS Code Extension.
+* **Prompt Beautifier:** Right-click context menu and dedicated Personal Dashboard UI to intelligently enhance your AI prompts.
 * **Personal Mode:** Offline support for standalone developer tracking.
 * **AI Configuration:** Support for OpenRouter, OpenAI, Anthropic, Gemini, and Ollama.
 * **Git Commit Scanning:** Automatically fetch today's Git activity.

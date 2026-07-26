@@ -5,11 +5,11 @@ import { authState } from '../auth/authState';
 import { gitCollector } from '../git/gitCollector';
 import { updateState } from '../state/updateState';
 import { log } from '../utils/logger';
+import { getAIConfig } from '../utils/aiConfig';
 
 class DashboardManager {
     private provider?: DashboardProvider;
     private lastSyncTime?: number;
-    public aiStatus: 'Available' | 'Unavailable' = 'Available';
 
     initialize(context: vscode.ExtensionContext) {
         this.provider = new DashboardProvider(context.extensionUri, () => this.refresh());
@@ -47,8 +47,20 @@ class DashboardManager {
     public async refresh() {
         if (!this.provider) return;
 
-        if (!authState.isLoggedIn) {
-            this.provider.updateWebview({ loggedIn: false });
+        if (!authState.isLoggedIn && authState.mode !== 'personal') {
+            this.provider.updateWebview({ loggedIn: false, mode: authState.mode });
+            return;
+        }
+
+        // If it's personal mode, we don't care about backend data or isLoggedIn
+        if (authState.mode === 'personal') {
+            this.provider.updateWebview({
+                loggedIn: true,
+                mode: 'personal',
+                backendStatus: 'Unreachable',
+                aiConfig: getAIConfig(),
+                lastSyncTime: Date.now()
+            });
             return;
         }
 
@@ -65,20 +77,24 @@ class DashboardManager {
 
             this.lastSyncTime = Date.now();
 
+            const aiConfig = getAIConfig();
+            
             this.provider.updateWebview({ 
                 loggedIn: true, 
+                mode: authState.mode,
                 ...data, 
                 unsyncedCommitsCount,
                 backendStatus: 'Connected',
-                aiStatus: this.aiStatus,
+                aiConfig: aiConfig,
                 lastSyncTime: this.lastSyncTime
             });
         } catch (error: any) {
             log(`Failed to refresh dashboard: ${error.message}`);
             this.provider.updateWebview({ 
                 loggedIn: true, // Keep rendering skeleton 
+                mode: authState.mode,
                 backendStatus: 'Unreachable',
-                aiStatus: 'Unavailable',
+                aiConfig: getAIConfig(),
                 lastSyncTime: this.lastSyncTime
             });
         }
