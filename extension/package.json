@@ -33,10 +33,7 @@
     "vscode": "^1.74.0"
   },
   "categories": [
-    "Other",
-    "Programming Languages",
-    "Productivity",
-    "AI"
+    "Other"
   ],
   "activationEvents": [],
   "main": "./dist/extension.js",
