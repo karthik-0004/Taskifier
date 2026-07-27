@@ -14,20 +14,20 @@
   },
   "homepage": "https://taskifier.com",
   "keywords": [
-  "taskifier",
-  "productivity",
-  "developer",
-  "developer tools",
-  "git",
-  "ai",
-  "prompt",
-  "prompt beautifier",
-  "work summary",
-  "daily updates",
-  "engineering",
-  "developer productivity",
-  "reports",
-  "vscode"
+    "taskifier",
+    "productivity",
+    "developer",
+    "developer tools",
+    "git",
+    "ai",
+    "prompt",
+    "prompt beautifier",
+    "work summary",
+    "daily updates",
+    "engineering",
+    "developer productivity",
+    "reports",
+    "vscode"
   ],
   "engines": {
     "vscode": "^1.74.0"
@@ -92,7 +92,6 @@
         "title": "Taskifier: Check Out",
         "category": "Taskifier"
       },
-
       {
         "command": "taskifier.summary",
         "title": "Taskifier: Submit Summary",
