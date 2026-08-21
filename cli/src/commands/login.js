@@ -31,7 +31,7 @@ export async function loginCmd() {
       });
 
       if (mode === 'organization') {
-        const isDevMode = process.env.TASKIFIER_DEV_MODE === 'true' || process.env.NODE_ENV === 'development';
+        const isDevMode = String(process.env.TASKIFIER_DEV_MODE).toLowerCase() === 'true' || process.env.NODE_ENV === 'development';
         if (isDevMode) {
           console.log(chalk.blue('\nDevelopment Mode Detected: Bypassing Marketplace Organization Restriction...'));
           break;
@@ -84,7 +84,7 @@ export async function loginCmd() {
       authState.setMode('personal');
       console.log(chalk.green(`\n✔ Successfully logged in as ${emailStr} in Personal mode\n`));
 
-      const isDevMode = process.env.TASKIFIER_DEV_MODE === 'true' || process.env.NODE_ENV === 'development';
+      const isDevMode = String(process.env.TASKIFIER_DEV_MODE).toLowerCase() === 'true' || process.env.NODE_ENV === 'development';
       if (isDevMode) {
         console.log(chalk.blue('\nDevelopment Mode Detected'));
         console.log(chalk.gray('Using AI configuration from local .env'));

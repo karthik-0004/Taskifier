@@ -1,118 +1,133 @@
-# Taskifier
+<div align="center">
+  <!-- CLI/Logo Image Placeholder -->
+  <img src="images/placeholder-logo.png" alt="Taskifier Logo" width="150" />
 
-> AI-powered developer productivity companion for VS Code.
+  <h1>Taskifier</h1>
+  <p><b>The AI-powered developer productivity companion for VS Code and the Terminal.</b></p>
+</div>
 
-## About
+<br />
 
-Taskifier is an intelligent engineering companion designed to eliminate the overhead of daily stand-ups and progress reporting. It helps developers:
-* Track daily work seamlessly.
-* Generate AI-enhanced work updates by automatically scanning Git commits.
-* Generate beautiful daily summaries of completed work.
-* Export daily reports to Markdown, PDF, or directly to Email.
-* Improve engineering productivity by automating the busywork.
+## 🚀 About Taskifier
 
-## Features
+**Taskifier** is an intelligent engineering companion built natively for developers. Designed to eliminate the overhead of daily stand-ups and manual progress reporting, Taskifier stays out of your way while keeping your managers and team perfectly synced. 
 
-* **Personal Mode:** 100% offline, private tracking and reporting.
-* **Prompt Beautifier:** Instantly upgrade your AI prompts by right-clicking text or using the dedicated Personal Dashboard.
-* **AI-Powered Summaries:** Transform raw technical commits into professional, manager-ready updates.
-* **Git Commit Scanning:** Automatically scans your local repository for today's work.
-* **Manual Work Updates:** Append blockers and tomorrow's plans easily.
-* **Daily Report Generation:** Creates structured daily summaries automatically.
-* **Multiple Exports:** Save as Markdown, generate PDFs, or send directly to your email client.
-* **VS Code Sidebar Integration:** Quick access to your dashboard right in your editor.
-* **Simple CLI Commands:** A powerful terminal interface (`t`) to control your workflow.
+It helps developers:
+* **Track daily work seamlessly** from the editor or the terminal.
+* **Generate AI-enhanced work updates** by automatically analyzing local Git commits.
+* **Create beautiful, manager-ready daily summaries** of completed work without typing a single paragraph.
+* **Improve overall engineering productivity** by automating administrative busywork.
 
-## Installation
+---
 
-1. Open VS Code.
-2. Navigate to the Extensions view (`Ctrl+Shift+X` or `Cmd+Shift+X`).
-3. Search for **Taskifier**.
-4. Click **Install**.
+## ✨ Features
 
-## Quick Start
+* **Dual Interfaces:** Seamlessly switch between the rich VS Code Extension Dashboard and our blazing-fast globally accessible CLI (`t`).
+* **Personal Mode:** 100% offline, private tracking and reporting. Perfect for individual developers.
+* **Prompt Beautifier:** Instantly upgrade your AI prompts by right-clicking text in your editor, or use the dedicated widget in the Personal Dashboard.
+* **AI-Powered Summaries:** Transform raw technical commits into professional, polished updates.
+* **Git Commit Scanning:** Automatically scans your local repository for today's work—no manual data entry required.
+* **Rich Exports:** Save your daily summaries as Markdown, generate PDFs, or send them directly to your email client.
 
-Getting started with Taskifier is incredibly easy. Open your terminal and run:
+---
 
-```text
-t login
-↓
-Select Personal Mode
-↓
-t start
-↓
-t update
-↓
-t submit
-```
+## 📸 Screenshots
 
-## Using Prompt Beautifier
+### VS Code Extension Dashboard
+<!-- Dashboard Image Placeholder: Upload your VS Code dashboard screenshot here and update the src path -->
+<div align="center">
+  <img src="images/placeholder-dashboard.jpg" alt="Taskifier VS Code Dashboard" width="800" />
+  <p><i>Manage your entire workday without leaving your editor.</i></p>
+</div>
 
-Taskifier includes a powerful built-in tool to instantly improve and format your prompts before sending them to AI. You can access it in two ways:
+<div align="center">
+  <img src="images/placeholder-dashboard2.jpg" alt="Taskifier VS Code Dashboard" width="800" />
+  <p><i>Manage your entire workday without leaving your editor.</i></p>
+</div>
 
-**1. Directly in the Text Editor (Right-Click):**
-* Highlight any text inside your code editor.
-* Right-click the highlighted text.
-* Select **Taskifier Prompt Beautifier** from the context menu.
-* A Side-by-Side Diff Editor will open, allowing you to review, regenerate, or replace your text seamlessly.
+### Terminal CLI Interface
+<!-- CLI Image Placeholder: Upload your CLI screenshot here and update the src path -->
+<div align="center">
+  <img src="images/placeholder-cli.jpg" alt="Taskifier CLI Interface" width="800" />
+  <p><i>A powerful, interactive terminal experience for power users.</i></p>
+</div>
 
-**2. From the Taskifier Dashboard (Personal Mode):**
-* Open the Taskifier extension sidebar.
-* Ensure you are logged into **Personal Mode**.
-* The sidebar will display a dedicated Prompt Beautifier widget where you can paste, beautify, and copy your optimized prompts entirely within the panel.
+---
 
-## Commands
+## 💻 CLI Commands (`t`)
 
-Taskifier offers a globally accessible CLI (`t`) to interact with your workspace:
+Taskifier offers a robust, globally accessible CLI. Here is a detailed breakdown of all available commands:
 
+### Core Workflow
 | Command | Description |
-| --- | --- |
-| `t login` | Login to Taskifier |
-| `t start` | Start a work session |
-| `t update` | Generate work updates from your Git commits |
-| `t view-updates` | View today's updates |
-| `t submit` | Generate and export your daily report |
-| `Taskifier: Prompt Beautifier` | Format and upgrade highlighted AI prompts (VS Code Command Palette) |
-| `t ai setup` | Configure your local AI provider |
-| `t logout` | Logout and clear your session |
-| `t commands` | Display all available commands |
+| :--- | :--- |
+| `t info` | Displays the interactive setup wizard, welcome screen, and mode selection. |
+| `t login` | Authenticate and connect your Taskifier account (Personal or Organization mode). |
+| `t check-in` | Officially start your workday and record your attendance. |
+| `t start` | Begin a focused work session. You will be prompted to select a specific project. |
+| `t switch` | Seamlessly switch your active work session to a different project without checking out. |
+| `t check-out` | End your workday and finalize all active sessions. |
 
-## AI Support
+### AI & Reporting
+| Command | Description |
+| :--- | :--- |
+| `t update` | Automatically scan your recent Git commits and use AI to generate a professional mid-day work update. |
+| `t view-updates` | Read all of the mid-day updates you have submitted today. |
+| `t submit` | Generate an AI-powered end-of-day summary based on all your updates. Use `t submit -r` to review your updates first. |
+| `t ai setup` | Configure your preferred AI provider (OpenAI, Anthropic, Gemini, Ollama, OpenRouter). Keys remain 100% local. |
 
-Taskifier allows you to bring your own AI to power your updates. You can configure your favorite AI provider using:
+### Utilities
+| Command | Description |
+| :--- | :--- |
+| `t status` | View your current attendance, active session details, and today's overall progress. |
+| `t commands` | Display a beautifully formatted list of all available commands. |
+| `t logout` | Securely log out and completely clear your session data from the machine. |
 
-```bash
-t ai setup
-```
+---
 
-Supported Providers:
-* OpenRouter
-* OpenAI
-* Anthropic
-* Google Gemini
-* Ollama (Local)
+## ⚡ Using Prompt Beautifier
 
-*Note: Your API keys remain securely stored on your local machine and are never uploaded.*
+Taskifier includes a powerful built-in tool to instantly format and improve your prompts before sending them to LLMs (like ChatGPT or Claude). 
 
-## Screenshots
+1. **Directly in the Text Editor (Right-Click):**
+   * Highlight any text inside your code editor.
+   * Right-click and select **Taskifier Prompt Beautifier** from the context menu.
+   * A Side-by-Side Diff Editor will open, allowing you to review, regenerate, or replace your text seamlessly.
 
-Coming soon.
+2. **From the Taskifier Dashboard (Personal Mode):**
+   * Open the Taskifier extension sidebar.
+   * Use the dedicated Prompt Beautifier widget to paste, beautify, and copy your optimized prompts entirely within the panel.
 
-## Roadmap
+---
 
-* Organization Mode
-* Team dashboards
-* Manager reporting
-* Attendance integration
-* Advanced analytics
-* Cloud synchronization
+## 🛠️ Installation & Quick Start
 
-## Support
+1. **Install the Extension:** Open VS Code, navigate to the Extensions view (`Ctrl+Shift+X`), search for **Taskifier**, and click Install.
+2. **Install the CLI:** Open your terminal and run `npm install -g taskifier-cli`.
+3. **Get Started:**
+   ```text
+   t info      (Select Personal or Organization mode)
+   t login     (Authenticate your account)
+   t start     (Start your first session)
+   t update    (Generate an update from your commits)
+   t submit    (Generate your daily summary)
+   ```
 
-* [GitHub Issues](https://github.com/Taskifier/taskifier-vscode/issues)
-* [Documentation](https://taskifier.com/docs)
-* [Email Support](mailto:support@taskifier.com)
+---
 
-## License
+## 🗺️ Roadmap
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+- [ ] Organization Mode (Team dashboards & Manager reporting)
+- [ ] Advanced Analytics & Insights
+- [ ] Cloud Synchronization across devices
+- [ ] Direct Jira/Linear Integration
+
+---
+
+## 📞 Support & License
+
+* **Issues & Bugs:** [GitHub Issues](https://github.com/Taskifier/taskifier-vscode/issues)
+* **Documentation:** [taskifier.com/docs](https://taskifier.com/docs)
+* **Contact:** [support@taskifier.com](mailto:support@taskifier.com)
+
+This project is licensed under the **MIT License** - see the LICENSE file for details.

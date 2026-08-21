@@ -1,0 +1,25 @@
+What Does SDG Mean for a Project?
+SDG stands for Sustainable Development Goals, which are 17 global goals established by the United Nations to address major world challenges. When applied to a software project, defining your SDGs means identifying how your application creates a positive impact on society, the economy, or the environment. It shows stakeholders, investors, or evaluators that your project has a meaningful, real-world purpose beyond just being a technical product. 
+
+--------------------------------------------------
+
+SDG Goals for Taskifier
+
+Based on Taskifier's features (time tracking, employee management, AI-powered summaries, attendance tracking, and multi-platform integration across Web, VS Code, and CLI), here are the most relevant SDGs and how to explain them in your project report or presentation:
+
+1. SDG 8 – Decent Work and Economic Growth
+- Why it fits: This goal focuses on promoting sustained economic growth, higher levels of productivity, and decent work environments.
+- How to explain it: "Taskifier directly contributes to SDG 8 by fostering a transparent and efficient work environment. By providing seamless check-in/check-out systems, automated daily summaries, and accurate session tracking, it ensures fair monitoring of employee hours. This prevents burnout, promotes better time management, and ultimately increases overall business productivity and economic growth."
+
+2. SDG 9 – Industry, Innovation and Infrastructure
+- Why it fits: This goal is about fostering technological innovation and upgrading industrial workflows.
+- How to explain it: "Taskifier aligns with SDG 9 by bringing technological innovation into the workplace. Through the integration of AI-powered work updates and cross-platform accessibility (Web, CLI, and VS Code), the project modernizes how teams communicate and track project progress. It provides a robust, innovative digital infrastructure that helps organizations scale their operations efficiently."
+
+3. SDG 12 – Responsible Consumption and Production (Optional/Secondary)
+- Why it fits: This goal includes the efficient use of resources.
+- How to explain it: "By utilizing AI to scan Git commit histories and automatically generate work summaries, Taskifier reduces the time and administrative overhead required for reporting. This lean approach to project management minimizes wasted human effort (responsible resource management) and allows developers to focus purely on productive output."
+
+--------------------------------------------------
+
+Summary for your Presentation/Report:
+"Taskifier primarily supports SDG 8 (Decent Work and Economic Growth) by creating a transparent, fair, and productive digital workspace for employees, and SDG 9 (Industry, Innovation, and Infrastructure) by leveraging AI and multi-platform integrations (Web, CLI, VS Code) to modernize organizational workflows and project management."

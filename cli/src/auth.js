@@ -17,7 +17,8 @@ const getSharedConfig = () => {
     organizationId: null,
     employee: null,
     apiUrl: 'http://localhost:3000',
-    mode: null
+    mode: null,
+    hasSeenWelcome: false
   };
 };
 
@@ -87,6 +88,17 @@ export const authState = {
   setMode(mode) {
     const config = getSharedConfig();
     config.mode = mode;
+    saveSharedConfig(config);
+  },
+
+  getHasSeenWelcome() {
+    const config = getSharedConfig();
+    return !!config.hasSeenWelcome;
+  },
+
+  setHasSeenWelcome(val) {
+    const config = getSharedConfig();
+    config.hasSeenWelcome = val;
     saveSharedConfig(config);
   }
 };

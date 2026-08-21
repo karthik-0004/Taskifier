@@ -10,6 +10,7 @@ import { switchCmd } from './commands/switch.js';
 import { viewUpdatesCmd } from './commands/view-updates.js';
 import { commandsCmd } from './commands/commands.js';
 import { setupAICmd } from './commands/ai-setup.js';
+import { showWelcomeScreen } from './welcome.js';
 
 export function setupCommands(program) {
   const aiCmd = program.command('ai').description('AI Configuration');
@@ -70,4 +71,12 @@ export function setupCommands(program) {
     .command('commands')
     .description('Display a list of all available commands and their descriptions')
     .action(commandsCmd);
+
+  program
+    .command('info')
+    .description('Show the welcome screen and setup wizard')
+    .action(async () => {
+      await showWelcomeScreen();
+      process.exit(0);
+    });
 }

@@ -54,14 +54,33 @@ export async function activate(context: vscode.ExtensionContext) {
 
     // Watch for CLI changes to the shared auth file
     const authFilePath = path.join(os.homedir(), '.taskifier-auth.json');
-    if (fs.existsSync(authFilePath)) {
-        fs.watchFile(authFilePath, { interval: 1000 }, async (curr, prev) => {
-            if (curr.mtimeMs !== prev.mtimeMs) {
-                log('Detected auth state change from CLI. Reloading dashboard...');
-                await authState.refreshFromStorage();
-                await statusBarManager.refresh();
-                dashboardManager.refresh();
+    if (!fs.existsSync(authFilePath)) {
+        fs.writeFileSync(authFilePath, JSON.stringify({}), 'utf8');
+    }
+    
+    fs.watchFile(authFilePath, { interval: 1000 }, async (curr, prev) => {
+        if (curr.mtimeMs !== prev.mtimeMs) {
+            log('Detected auth state change from CLI. Reloading dashboard...');
+            await authState.refreshFromStorage();
+            await statusBarManager.refresh();
+            dashboardManager.refresh();
+        }
+    });
+
+    // Check if we need to show CLI recommendation
+    const hasShownCliRecommendation = context.globalState.get<boolean>('hasShownCliRecommendation', false);
+    if (!hasShownCliRecommendation) {
+        vscode.window.showInformationMessage(
+            'Taskifier: Boost your productivity by installing our CLI tool!', 
+            'Install CLI', 
+            'Dismiss'
+        ).then(selection => {
+            if (selection === 'Install CLI') {
+                const terminal = vscode.window.createTerminal('Taskifier CLI Install');
+                terminal.show();
+                terminal.sendText('npm install -g taskifier-cli');
             }
+            context.globalState.update('hasShownCliRecommendation', true);
         });
     }
 

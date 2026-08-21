@@ -4,7 +4,7 @@
   "description": "AI-powered developer productivity assistant for daily work updates, Git summaries, prompt beautification, and engineering reports.",
   "publisher": "Taskifier",
   "icon": "images/taskifier-icon.png",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "repository": {
     "type": "git",
     "url": "https://github.com/karthik-0004/Taskifier"
