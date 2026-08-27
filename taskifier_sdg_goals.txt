@@ -5,7 +5,7 @@ SDG stands for Sustainable Development Goals, which are 17 global goals establis
 
 SDG Goals for Taskifier
 
-Based on Taskifier's features (time tracking, employee management, AI-powered summaries, attendance tracking, and multi-platform integration across Web, VS Code, and CLI), here are the most relevant SDGs and how to explain them in your project report or presentation:
+Based on Taskifieeer's features (time tracking, employee management, AI-powered summaries, attendance tracking, and multi-platform integration across Web, VS Code, and CLI), here are the most relevant SDGs and how to explain them in your project report or presentation:
 
 1. SDG 8 – Decent Work and Economic Growth
 - Why it fits: This goal focuses on promoting sustained economic growth, higher levels of productivity, and decent work environments.

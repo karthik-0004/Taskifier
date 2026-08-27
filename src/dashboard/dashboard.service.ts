@@ -20,7 +20,13 @@ export class DashboardService {
         select: { checkInAt: true, checkOutAt: true, checkInSource: true, checkOutSource: true },
       }),
       this.prisma.workSession.findMany({
-        where: { userId, startedAt: { gte: today, lt: tomorrow } },
+        where: { 
+          userId, 
+          OR: [
+            { startedAt: { gte: today, lt: tomorrow } },
+            { endedAt: null }
+          ]
+        },
         include: { project: { select: { name: true } } },
         orderBy: { startedAt: 'desc' },
       }),

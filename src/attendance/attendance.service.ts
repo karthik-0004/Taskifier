@@ -25,7 +25,7 @@ export class AttendanceService {
     if (existing?.checkInAt) {
       if (!existing.checkOutAt) {
         throw new ConflictException(
-          `You already have an active session today, started at ${existing.checkInAt.toISOString()}.`
+          `You have already checked in today at ${existing.checkInAt.toISOString()}.`
         );
       } else {
         throw new ConflictException(
@@ -65,6 +65,18 @@ export class AttendanceService {
       throw new ConflictException(
         "Today's session has already been completed. You can start a new session tomorrow."
       );
+    }
+
+    // Close any active work session
+    const activeSession = await this.prisma.workSession.findFirst({
+      where: { userId, endedAt: null }
+    });
+
+    if (activeSession) {
+      await this.prisma.workSession.update({
+        where: { id: activeSession.id },
+        data: { endedAt: new Date() }
+      });
     }
 
     return this.prisma.attendance.update({
