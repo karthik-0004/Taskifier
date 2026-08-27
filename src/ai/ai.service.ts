@@ -41,12 +41,22 @@ export class AiService {
     const sessions = await this.prisma.workSession.findMany({
       where: {
         userId,
-        startedAt: { gte: date, lt: nextDate },
+        OR: [
+          { startedAt: { gte: date, lt: nextDate } },
+          { endedAt: { gte: date, lt: nextDate } },
+          { endedAt: null }
+        ]
       },
       include: {
         project: { select: { id: true, name: true } },
-        activityEvents: { orderBy: { timestamp: 'asc' } },
-        workUpdates: { orderBy: { createdAt: 'asc' } },
+        activityEvents: { 
+          where: { timestamp: { gte: date, lt: nextDate } },
+          orderBy: { timestamp: 'asc' } 
+        },
+        workUpdates: { 
+          where: { createdAt: { gte: date, lt: nextDate } },
+          orderBy: { createdAt: 'asc' } 
+        },
       },
     });
 
