@@ -1,12 +1,15 @@
 {
   "name": "taskifier-cli",
-  "version": "1.0.1",
+  "version": "1.0.5",
   "type": "module",
   "bin": {
     "taskifier": "./bin/taskifier.js",
     "t": "./bin/taskifier.js"
   },
-  "scripts": {},
+  "scripts": {
+    "postinstall": "node ./bin/postinstall.js",
+    "preuninstall": "node ./bin/preuninstall.js"
+  },
   "keywords": [],
   "author": "",
   "license": "UNLICENSED",
@@ -18,6 +21,7 @@
     "commander": "^15.0.0",
     "conf": "^15.1.0",
     "node-notifier": "^10.0.1",
-    "simple-git": "^3.36.0"
+    "simple-git": "^3.36.0",
+    "update-notifier": "^7.3.1"
   }
 }

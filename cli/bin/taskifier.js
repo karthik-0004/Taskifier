@@ -6,6 +6,19 @@ import { setupCommands } from '../src/index.js';
 import { authState } from '../src/auth.js';
 import { showWelcomeScreen } from '../src/welcome.js';
 
+import updateNotifier from 'update-notifier';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const packageJsonPath = path.join(__dirname, '..', 'package.json');
+const pkg = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+
+// Check for updates and notify
+updateNotifier({ pkg }).notify();
+
 async function main() {
   if (!authState.getHasSeenWelcome()) {
     await showWelcomeScreen();
@@ -17,7 +30,7 @@ async function main() {
   program
     .name('taskifier')
     .description('Terminal CLI for Taskifier')
-    .version('1.0.0');
+    .version(pkg.version);
 
   // Initialize all commands
   setupCommands(program);
