@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import chalk from 'chalk';
+import { authState } from '../src/auth.js';
 
 const clipTop = chalk.bold.white('       ╭───────────╮');
 const clipHead = chalk.bold.white('     ╭─┴───────────┴─╮');
@@ -39,10 +40,16 @@ try {
   console.log(out);
 } catch (e) {}
 
+const isUpdate = authState.getHasSeenWelcome();
+const popupTitle = isUpdate ? 'Taskifier CLI Updated! 🔄' : 'Taskifier CLI Installed! 🚀';
+const popupMsg = isUpdate 
+  ? 'The package was successfully updated! Type `t info` to see what is new.'
+  : 'Installation complete. Open your terminal and type `t info` to get started!';
+
 try {
   notifier.notify({
-    title: 'Taskifier CLI Ready! 🚀',
-    message: 'Installation/Update complete. Open your terminal and type `t info` to get started!',
+    title: popupTitle,
+    message: popupMsg,
     sound: true,
     wait: false
   });

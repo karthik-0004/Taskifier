@@ -10,6 +10,7 @@ import { switchCmd } from './commands/switch.js';
 import { viewUpdatesCmd } from './commands/view-updates.js';
 import { commandsCmd } from './commands/commands.js';
 import { setupAICmd } from './commands/ai-setup.js';
+import { uninstallCmd } from './commands/uninstall.js';
 import { showWelcomeScreen } from './welcome.js';
 
 export function setupCommands(program) {
@@ -45,6 +46,11 @@ export function setupCommands(program) {
     .command('logout')
     .description('Logout and completely remove your account from the terminal')
     .action(logoutCmd);
+
+  program
+    .command('uninstall')
+    .description('Safely uninstall the Taskifier CLI from your computer')
+    .action(uninstallCmd);
 
   program
     .command('update')

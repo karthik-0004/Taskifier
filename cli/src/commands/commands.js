@@ -15,7 +15,8 @@ export async function commandsCmd() {
     { name: 'submit', desc: 'Generates and submits your final AI Daily Summary. (Tip: Use the -r or --review flag to review your previously submitted mid-day updates before generating the summary).' },
     { name: 'ai setup', desc: 'Configures your local AI provider settings for generating updates and summaries.' },
     { name: 'commands', desc: 'Displays this list of commands and their descriptions.' },
-    { name: 'logout', desc: 'Logs you out and completely removes your account credentials from the terminal environment.' }
+    { name: 'logout', desc: 'Logs you out and completely removes your account credentials from the terminal environment.' },
+    { name: 'uninstall', desc: 'Safely uninstalls the Taskifier CLI and removes it completely from your computer.' }
   ];
 
   cmds.forEach(c => {
