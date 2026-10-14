@@ -1,0 +1,48 @@
+TASKIFIER - HOW TO START THE PROJECT
+
+Prerequisites:
+- Node.js 18 or newer
+- npm
+- A PostgreSQL database
+
+1. Open PowerShell in the project root:
+
+   cd D:\Taskifier
+
+2. Install backend dependencies:
+
+   npm install
+
+3. Configure environment variables:
+
+   Copy-Item .env.example .env
+
+   Edit .env and set DATABASE_URL and the other required values.
+   If .env already exists, verify that its values are correct.
+
+4. Prepare the database (run this when the database is new or migrations changed):
+
+   npx prisma migrate deploy
+   npm run prisma:seed
+
+5. Start the NestJS backend in the first terminal:
+
+   npm run start:dev
+
+   The backend normally runs at http://localhost:3000.
+
+6. Open a second PowerShell terminal and start the Next.js frontend:
+
+   cd D:\Taskifier\web
+   npm install
+   npm run dev
+
+   Open http://localhost:3001 or the URL shown in the terminal.
+
+Useful commands:
+- Backend production build: npm run build
+- Backend tests: npm run test
+- Frontend production build: cd web; npm run build
+- Frontend production server: cd web; npm run start
+
+To stop either development server, press Ctrl+C in its terminal.

@@ -1,0 +1,641 @@
+\documentclass[conference]{IEEEtran}
+
+% ============================================================
+% TASKIFIER - IEEE CONFERENCE PAPER
+% ============================================================
+
+\usepackage{cite}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{url}
+\usepackage{multirow}
+\usepackage{balance}
+\usepackage{microtype}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,fit,calc}
+\usepackage[colorlinks=true, urlcolor=blue]{hyperref}
+
+\definecolor{taskblue}{RGB}{31,78,121}
+\definecolor{tasklight}{RGB}{232,240,248}
+\definecolor{taskgreen}{RGB}{226,239,218}
+\definecolor{taskgold}{RGB}{255,242,204}
+\pgfkeys{/tikz/.cd,
+    tasknode/.style={draw=taskblue, fill=tasklight, rounded corners=2pt,
+        align=center, text width=0.70\columnwidth, minimum width=0.70\columnwidth, minimum height=0.52cm,
+        inner sep=4pt, font=\scriptsize},
+    taskexternal/.style={draw=black!65, fill=taskgold, rounded corners=2pt,
+        align=center, text width=0.70\columnwidth, minimum width=0.70\columnwidth, minimum height=0.52cm,
+        inner sep=4pt, font=\scriptsize},
+    taskdata/.style={draw=black!65, fill=taskgreen, rounded corners=2pt,
+        align=center, text width=0.70\columnwidth, minimum width=0.70\columnwidth, minimum height=0.52cm,
+        inner sep=4pt, font=\scriptsize},
+    taskarrow/.style={-{Latex[length=2mm]}, draw=taskblue, thick}
+}
+
+\begin{document}
+
+% ============================================================
+% TITLE
+% ============================================================
+
+\title{Taskifier: A Multi-Client AI-Assisted Platform for Developer Work Tracking and Engineering Reports}
+
+% ============================================================
+% AUTHORS
+% ============================================================
+
+\author{
+\begin{minipage}{\textwidth}
+\centering
+
+% ===================== TOP ROW =====================
+
+\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}ccc@{}}
+
+\begin{minipage}[t]{0.28\textwidth}
+\centering
+\textbf{G.Karthikeyan}\\[2pt]
+\scriptsize
+Department of Computer Science\\
+and Information Technology (CSIT)\\
+CMR Technical Campus\\
+Hyderabad, India\\
+\href{mailto:237r1a3315@cmrtc.ac.in}{237r1a3327@cmrtc.ac.in}
+\end{minipage}
+&
+\begin{minipage}[t]{0.28\textwidth}
+\centering
+\textbf{R.Sandhya Reddy}\\[2pt]
+\scriptsize
+Assistant Professor\\
+Department of Computer Science\\
+Engineering (CSE)\\
+CMR Technical Campus\\
+Hyderabad, India\\
+\href{mailto:sandhya.cse@cmrtc.ac.in}{sandhya.cse@cmrtc.ac.in}
+\end{minipage}
+&
+\begin{minipage}[t]{0.28\textwidth}
+\centering
+\textbf{P.Mounika}\\[2pt]
+\scriptsize
+Department of Computer Science\\
+and Information Technology (CSIT)\\
+CMR Technical Campus\\
+Hyderabad, India\\
+\href{mailto:237r1a3337@cmrtc.ac.in}{237r1a3337@cmrtc.ac.in}
+\end{minipage}
+
+\end{tabular*}
+
+\vspace{0.55cm}
+
+% ===================== BOTTOM ROW =====================
+
+\begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}ccc@{}}
+
+\begin{minipage}[t]{0.28\textwidth}
+\centering
+\textbf{G.Sai Krishna}\\[2pt]
+\scriptsize
+Department of Computer Science\\
+and Information Technology (CSIT)\\
+CMR Technical Campus\\
+Hyderabad, India\\
+\href{mailto:237r1a3351@cmrtc.ac.in}{237r1a3351@cmrtc.ac.in}
+\end{minipage}
+&
+\begin{minipage}[t]{0.28\textwidth}
+\centering
+\textbf{Najeema Afrin}\\[2pt]
+\scriptsize
+Assistant Professor\\
+Department of Computer Science\\
+Engineering (CSE)\\
+CMR Technical Campus\\
+Hyderabad, Telangana, India\\
+\href{mailto:najeema.afrin@gmail.com}{najeema.afrin@gmail.com}
+\end{minipage}
+&
+\begin{minipage}[t]{0.28\textwidth}
+\centering
+\textbf{Chavala Sirisha}\\[2pt]
+\scriptsize
+Assistant Professor\\
+Department of Computer Science\\
+Engineering (CSE)\\
+CMR Technical Campus\\
+Hyderabad, Telangana, India\\
+\href{mailto:sirisha.cse@gmail.com}{sirisha.cse@gmail.com}
+\end{minipage}
+
+\end{tabular*}
+
+\end{minipage}
+}
+
+\maketitle
+
+% ============================================================
+% ABSTRACT
+% ============================================================
+
+\begin{abstract}
+Engineering work is distributed across source-control activity, development sessions, project assignments, attendance records, and manually written updates. Taskifier presents a multi-client platform that consolidates these signals and produces reviewable engineering reports. The system consists of a Next.js and React web portal, a VS Code extension, a terminal CLI, and a modular NestJS REST backend. PostgreSQL stores the relational domain model through Prisma, including users, organizations, projects, assignments, work sessions, activity events, attendance, updates, daily summaries, and weekly reports. Employees can start sessions, associate work with projects, submit Git activity and notes, and generate AI-assisted summaries. The backend builds date-bounded structured context and invokes the OpenAI chat-completions API with prompts that constrain the output to supplied evidence. Daily summaries move through draft, edit, approval, and rejection states, while approved summaries can be consolidated into weekly reports. JWT access and refresh tokens, bcrypt password hashing, role guards, and organization permission metadata support authentication and authorization. The implementation demonstrates an integrated workflow for developer-work reporting; it does not claim that AI-generated text is a definitive measure of productivity or software quality.
+\end{abstract}
+
+% ============================================================
+% KEYWORDS
+% ============================================================
+
+\begin{IEEEkeywords}
+Developer productivity, engineering work tracking, NestJS, Next.js, PostgreSQL, Prisma, JWT, Git activity, OpenAI, multi-client systems
+\end{IEEEkeywords}
+
+% ============================================================
+% I. INTRODUCTION
+% ============================================================
+
+\section{Introduction}
+
+Software engineering work is often visible through several disconnected systems. Commits and pull requests are recorded by source-control platforms, work time may be represented by attendance or session tools, project assignments are maintained separately, and progress updates are frequently written manually. This fragmentation makes it difficult for employees to explain their work consistently and for managers to review progress without repeatedly collecting information from different sources.
+
+The problem is not simply the absence of another task list. A useful engineering-work system must preserve the relationship between a work session, its project, the activity performed during that session, and the summary eventually reviewed by a manager. It must also support the workflows used by developers in their normal environments. A browser-only application may be inconvenient when an employee is working inside an IDE or terminal, while an IDE-only tool does not provide the organizational dashboards required by managers.
+
+Taskifier addresses this problem through a shared backend and multiple clients. The system provides a Next.js web portal for employee and manager workflows, a VS Code extension for IDE-based commands and Git collection, and a Node.js command-line interface. These clients communicate with a NestJS REST API. The API centralizes validation, authentication, business rules, persistence, AI integration, email notifications, project operations, attendance, and reporting.
+
+The central workflow begins when an authenticated employee starts a work session. A session may be associated with a project and records its source, such as web, VS Code, CLI, or Cursor. Activity events may represent commits, branch switches, pull requests, or file edits. Employees can also submit manual notes and work updates. For a selected date, the backend groups relevant sessions, commit messages, and update contents into a structured context. OpenAI is then used to generate a draft daily summary. The employee can edit, approve, or reject the result. Approved daily summaries can subsequently be combined into weekly reports for personal or management review.
+
+The primary objectives of Taskifier are:
+
+\begin{itemize}
+    \item to provide a common work-tracking backend for web, IDE, and terminal clients;
+    \item to record project assignments, sessions, activity events, attendance, and employee updates;
+    \item to connect engineering activity with the project and session in which it occurred;
+    \item to reduce the manual effort required to prepare daily and weekly work reports;
+    \item to provide an approval workflow for AI-generated and manually entered summaries;
+    \item to support organization roles and permission-based access;
+    \item to integrate GitHub account connectivity and repository activity retrieval; and
+    \item to expose employee and manager dashboards through a structured REST API and web interface.
+\end{itemize}
+
+The contribution of Taskifier is primarily architectural and implementation-oriented. It combines multi-client access, relational work tracking, authentication, Git activity ingestion, AI-assisted text generation, approval state, and manager reporting in one application workflow.
+
+% ============================================================
+% II. RELATED WORK
+% ============================================================
+
+\section{Related Work}
+
+Taskifier is related to several categories of software systems: project and work-management platforms, developer analytics tools, source-control integrations, and AI-assisted reporting systems. Conventional project-management applications generally organize work around tasks, milestones, and assignments. While these abstractions are useful for planning, they do not necessarily capture the low-level evidence that a developer worked on a particular project during a specific session.
+
+Developer analytics systems commonly use commits, pull requests, issue activity, or code-review events as signals of engineering work. Such signals are valuable but incomplete. A commit message may omit context, and a source-control event does not by itself indicate attendance, project assignment, or the employee's explanation of the work. Taskifier therefore stores Git-related activity as one component of a broader session and reporting model rather than treating it as a standalone productivity score.
+
+AI-assisted reporting tools provide another relevant comparison. Large language models can convert structured or semi-structured work evidence into readable summaries, but unrestricted generation can introduce unsupported claims. Taskifier addresses this concern through date-bounded context construction, explicit prompts that prohibit invention, and an employee review and approval stage. The result is intended to assist reporting, not to make an automated judgment about employee performance.
+
+The system also differs from a document-retrieval chatbot. The implemented backend does not use embeddings, a vector database, retrieval-augmented generation, or conversation memory. Its AI pipeline sends structured operational data, such as commit messages and update notes, directly to an OpenAI chat-completions request. This narrower design is appropriate for the current reporting task and makes the source of each generated report easier to explain.
+
+\begin{table}[!t]
+\caption{Comparison of Relevant System Categories}
+\label{tab:related}
+\centering
+\footnotesize
+\begin{tabular}{p{0.20\columnwidth}p{0.23\columnwidth}p{0.25\columnwidth}p{0.22\columnwidth}}
+\toprule
+\textbf{System category} & \textbf{Typical input} & \textbf{Primary purpose} & \textbf{Taskifier distinction}\\
+\midrule
+Project management & Tasks and assignments & Planning and delivery tracking & Adds session and activity evidence\\
+Developer analytics & Commits and pull requests & Engineering activity analysis & Combines Git signals with attendance and updates\\
+AI reporting & Text or structured events & Summary generation & Uses bounded prompts and employee approval\\
+IDE productivity tool & Workspace actions & Local developer assistance & Shares one backend with web and CLI clients\\
+\textbf{Taskifier} & Sessions, projects, events, updates & Reviewable engineering reports & Multi-client, relational, AI-assisted workflow\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ============================================================
+% III. PROBLEM DEFINITION AND OBJECTIVES
+% ============================================================
+
+\section{Problem Definition and System Objectives}
+
+\subsection{Problem Definition}
+
+The central problem addressed by Taskifier is the lack of a unified, reviewable path from developer activity to engineering reports. In a fragmented workflow, an employee may need to remember which project was active, reconstruct time spent, locate relevant commits, write a progress note, and prepare a weekly report. Managers then receive reports in inconsistent formats and have limited supporting context.
+
+A solution must balance automation with accountability. Raw activity should remain associated with a user and session, while generated text should remain editable and reviewable. The system also needs a security boundary because work reports, attendance, project assignments, and profile information are organizational data. Finally, the same business operations should be available through the web, IDE, and terminal clients without duplicating the source of truth.
+
+Taskifier therefore focuses on the following questions:
+
+\begin{enumerate}
+    \item How can work sessions, project assignments, Git activity, attendance, and employee notes be represented in one relational model?
+    \item How can the system generate useful summaries from structured evidence while limiting unsupported AI claims?
+    \item How can several client types use the same authenticated API and reporting workflow?
+    \item How can employees and managers receive different views of the same underlying work records?
+\end{enumerate}
+
+\subsection{Scope of the Implementation}
+
+The implementation includes employee and manager workflows, organization-aware roles and permissions, project management, work sessions, activity events, attendance, daily summaries, weekly reports, GitHub connectivity, email notifications, and OpenAI-assisted generation. The repository also includes a super-admin role and frontend route, but a complete backend super-admin administration workflow is not clearly identifiable from the source.
+
+Some Next.js route handlers return mock or generated data and do not call the NestJS backend. These routes are treated as demonstration or partial UI paths rather than evidence that every displayed frontend value is backed by live production data. Likewise, the repository does not show Docker, CI/CD, cloud deployment, a vector database, or a formal production hosting topology.
+
+% ============================================================
+% IV. DATASET AND DOMAIN MODEL DESCRIPTION
+% ============================================================
+
+\section{Data and Domain Model Description}
+
+\subsection{Users and Organizations}
+
+A \texttt{User} record contains identity information, a unique email, a bcrypt password hash, profile attributes, a global role, optional organization identifiers, optional organization-role identifiers, a connection key for extension login, and optional password-reset fields. The global roles are \texttt{SUPER\_ADMIN}, \texttt{MANAGER}, and \texttt{EMPLOYEE}.
+
+The organization model supports an organization, organization-specific roles, and permission keys assigned to those roles. Permission examples include member management, role creation, project management, team-summary viewing, reporting, and attendance management. Permission keys are included in the access-token payload during login.
+
+\subsection{Projects and Assignments}
+
+A \texttt{Project} record stores a unique project code, name, description, status, priority, category, dates, client information, manager and team-lead references, budget and duration information, technology fields, repository and documentation links, and tags. Users and projects have a many-to-many relationship through \texttt{ProjectAssignment}. The join record stores an employee role, workload, and joining date.
+
+\subsection{Sessions and Activity}
+
+A \texttt{WorkSession} belongs to a user, optionally belongs to a project, and stores start time, end time, and source. The source enum distinguishes \texttt{VSCODE}, \texttt{CURSOR}, \texttt{WEB}, \texttt{CLI}, and \texttt{OTHER}. A session contains zero or more \texttt{ActivityEvent} records. Each event stores an activity type and a JSON payload. Supported activity types include commits, branch switches, pull requests, and file edits.
+
+\subsection{Updates, Attendance, and Reports}
+
+A \texttt{WorkUpdate} belongs to a user and may be associated with a session. It stores raw commit data, an optional manual note, optional AI-enhanced content, and final content. \texttt{Attendance} is unique for each user and UTC calendar date and stores check-in and check-out timestamps together with their sources.
+
+A \texttt{DailySummary} is unique for a user and date. It contains AI-generated content, optional edited content, a status, and an approval timestamp. The status is \texttt{DRAFT}, \texttt{APPROVED}, or \texttt{REJECTED}. A \texttt{WeeklyReport} stores generated content for a user and week start, with a uniqueness constraint on the user/week pair.
+
+\begin{table}[!t]
+\caption{Principal Taskifier Domain Entities}
+\label{tab:entities}
+\centering
+\footnotesize
+\begin{tabular}{p{0.22\columnwidth}p{0.34\columnwidth}p{0.32\columnwidth}}
+\toprule
+\textbf{Entity} & \textbf{Represents} & \textbf{Important integrity rule}\\
+\midrule
+User & Employee, manager, or administrator & Unique email; role and organization metadata\\
+Organization & Tenant or company & Owns users and organization roles\\
+Project & Engineering project & Unique project code; manager reference\\
+ProjectAssignment & User-project membership & Unique user/project pair\\
+WorkSession & Period of tracked work & Optional project; source and timestamps\\
+ActivityEvent & Event within a session & Cascades when session is deleted\\
+Attendance & Daily check-in/out record & Unique user/date pair\\
+WorkUpdate & Employee work note and commit data & Optional session association\\
+DailySummary & Daily report state & Unique user/date pair\\
+WeeklyReport & Weekly report output & Unique user/week pair\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ============================================================
+% V. PROPOSED FRAMEWORK
+% ============================================================
+
+\section{Proposed Taskifier Framework}
+
+\subsection{System Architecture}
+
+Taskifier is organized as a multi-client application architecture. The web portal, VS Code extension, and CLI act as clients of a shared NestJS API. The API is divided into Nest modules for authentication, users, projects, sessions, activity, AI, summaries, reports, attendance, dashboards, organizations, email, and Prisma access.
+
+The request path begins at a client and proceeds through HTTP routing, DTO validation, authentication and authorization guards, a controller, and a domain service. Services use Prisma to access PostgreSQL or call an external integration. The response is returned as JSON to the client. The design keeps business rules in the backend rather than reimplementing them separately in each client.
+
+\begin{figure}[!t]
+    \centering
+    \begin{tikzpicture}[node distance=5pt]
+        \node[tasknode] (clients) {Next.js web portal \quad | \quad VS Code extension \quad | \quad Node CLI};
+        \node[tasknode, below=of clients] (http) {HTTP/JSON requests with Bearer access token};
+        \node[tasknode, below=of http] (guards) {NestJS routing, DTO validation, JWT, role, and permission guards};
+        \node[tasknode, below=of guards] (services) {Domain controllers and services: projects, sessions, attendance, summaries, reports};
+        \node[taskdata, below=of services] (db) {Prisma 7 + PostgreSQL relational data model};
+        \node[taskexternal, below=of db] (integrations) {OpenAI generation \quad | \quad GitHub API \quad | \quad Nodemailer};
+        \draw[taskarrow] (clients) -- (http);
+        \draw[taskarrow] (http) -- (guards);
+        \draw[taskarrow] (guards) -- (services);
+        \draw[taskarrow] (services) -- (db);
+        \draw[taskarrow] (db) -- (integrations);
+    \end{tikzpicture}
+    \caption{Layered architecture of the Taskifier multi-client platform.}
+    \label{fig:taskifier_architecture}
+\end{figure}
+
+\subsection{Client Layer}
+
+The Next.js web application contains public pages and role-specific employee, manager, and super-admin areas. Its API wrapper reads browser credentials, adds the Bearer token, parses backend errors, and attempts one access-token refresh after a 401 response. The VS Code extension contributes a Taskifier activity-bar view, dashboard webview, status bar integration, and commands for login, session control, updates, summaries, logout, and prompt beautification. The CLI provides commands for login, status, check-in, check-out, sessions, updates, summaries, local AI setup, and logout.
+
+\subsection{Backend Layer}
+
+NestJS is used to compose independent modules through dependency injection. The application bootstrap enables CORS, installs a global validation pipe, installs a global exception filter, and listens on the configured port. The validation pipe transforms DTOs, removes non-whitelisted properties, and rejects unexpected fields. Controllers expose REST endpoints while services perform database operations and enforce domain rules.
+
+\subsection{Persistence and Integration Layer}
+
+Prisma 7 with the PostgreSQL adapter provides typed access to the relational schema. PostgreSQL enforces primary keys, unique fields, composite uniqueness, foreign keys, and deletion behavior. The OpenAI service generates text from structured work context. The GitHub service handles OAuth and GitHub REST requests. Nodemailer sends project and account notifications when SMTP is configured and logs email content in development when SMTP is unavailable.
+
+\subsection{Satellite and Spatial Processing Exclusion}
+
+Unlike the supplied template paper, Taskifier does not implement Sentinel-2 processing, Google Earth Engine, NDVI, NDBI, PostGIS analysis, OpenStreetMap spatial scoring, or GIS risk indices. Those technologies are not included in the project's source or package configuration and are therefore not described as Taskifier capabilities.
+
+% ============================================================
+% VI. AUTHENTICATION, WORKFLOW, AND AI IMPLEMENTATION
+% ============================================================
+
+\section{Authentication, Workflow, and AI Implementation}
+
+\subsection{Authentication and Authorization}
+
+The web login endpoint receives an email and password. The backend loads the user and organization-role permissions, compares the supplied password with the stored bcrypt hash, and signs an access JWT and a refresh JWT. The access token contains the user identifier, email, global role, organization identifiers, and permission keys. The refresh token contains the user identifier and is signed using a separate refresh secret.
+
+The web client stores the access token, refresh token, and user object in browser \texttt{localStorage}. It sends the access token in the \texttt{Authorization: Bearer} header. When a request receives a 401 response, the client calls the refresh endpoint and retries the original request once. If refresh fails, it clears local credentials and dispatches a logout event.
+
+The extension and CLI use a separate extension-login endpoint. In addition to email and password, this flow requires a per-user connection key. The extension and CLI share a local authentication file at \texttt{\textasciitilde/.taskifier-auth.json}. The backend uses Passport JWT to verify the access token and reload the user from PostgreSQL. Route metadata can then be enforced by a JWT guard, a role guard, or a permission guard.
+
+The implemented authentication design supports multiple clients without a centralized browser session store. Its main limitations are that localStorage and the shared local JSON file increase credential exposure, refresh tokens are not visibly rotated or revoked server-side, and password-reset tokens are stored directly in the user record. These are important production-hardening areas rather than hidden features of the current implementation.
+
+\subsection{Session and Attendance Workflow}
+
+When an employee starts a session, the backend first checks for an existing active session. It then finds the UTC-day attendance record. If none exists, it creates one and checks the employee in. If an attendance record exists without a check-in, it updates that record. A user who has already checked out cannot start another session on the same day. The new session stores its source and optional project.
+
+Ending a session verifies that the session exists, belongs to the authenticated user, and has not already ended. Check-out requires a prior check-in and also closes an active work session before recording the attendance checkout timestamp. The attendance and session rules are implemented in services and protected by a unique user/date attendance constraint.
+
+\subsection{Activity and Update Workflow}
+
+Activity endpoints accept individual or bulk events associated with a session. The event type identifies whether the payload describes a commit, branch switch, pull request, or file edit. The flexible JSON payload permits different event types to carry different fields. Work updates retain raw commits, manual notes, AI-enhanced text, and final text.
+
+The extension and CLI can use the local Git repository through the \texttt{simple-git} library. The resulting information can be sent to the backend as activity or update data. This design separates collection of local developer evidence from its persistence and reporting by the central API.
+
+\subsection{AI-Assisted Reporting}
+
+The backend AI service does not use embeddings or a vector store. For daily generation, it queries the user's sessions that start, end, or remain active during the requested UTC date. It includes project information, activity events in the date interval, and work updates in the date interval. Commit messages and update contents are grouped by project, while completed session minutes and the active-session state are also calculated.
+
+The resulting structured object is serialized as JSON and sent to OpenAI as the user message. A system prompt instructs the model to produce a professional daily summary, group work by project, treat supplied notes as accomplishments, and avoid inferring outcomes, impact, intent, or code quality. The output is stored through an upsert in \texttt{DailySummary} and begins in the \texttt{DRAFT} state.
+
+Weekly reports are generated from approved daily summary content. The service labels each summary by day and asks OpenAI to organize the result into features completed, bugs fixed, pull requests, blockers, and upcoming work. A separate enhancement prompt rewrites individual commit messages into concise manager-readable work items without combining unrelated commits.
+
+\begin{figure}[!t]
+    \centering
+    \begin{tikzpicture}[node distance=5pt]
+        \node[taskdata] (source) {Work sessions + commit events + employee updates};
+        \node[tasknode, below=of source] (context) {UTC date filtering and project grouping};
+        \node[tasknode, below=of context] (json) {Structured JSON context: commits, notes, minutes, active-session state};
+        \node[taskexternal, below=of json] (openai) {OpenAI chat completion with evidence-constrained prompt};
+        \node[tasknode, below=of openai] (outputs) {Draft daily summary \quad | \quad weekly report \quad | \quad enhanced update};
+        \node[taskdata, below=of outputs] (review) {Employee edit and approval \textrightarrow{} approved report};
+        \draw[taskarrow] (source) -- (context);
+        \draw[taskarrow] (context) -- (json);
+        \draw[taskarrow] (json) -- (openai);
+        \draw[taskarrow] (openai) -- (outputs);
+        \draw[taskarrow] (outputs) -- (review);
+    \end{tikzpicture}
+    \caption{Structured-data AI reporting pipeline used by Taskifier.}
+    \label{fig:taskifier_ai_pipeline}
+\end{figure}
+
+% ============================================================
+% VII. DATA STORAGE AND APPLICATION LAYER
+% ============================================================
+
+\section{Data Storage and Application Layer}
+
+\subsection{PostgreSQL and Prisma}
+
+PostgreSQL is used because Taskifier contains relationships and integrity rules that are naturally relational. Users belong to organizations and organization roles; users and projects are connected through a constrained assignment table; sessions contain events and updates; and summaries, reports, and attendance are unique over user/time combinations.
+
+Prisma provides the schema and typed client interface. The schema defines UUID primary keys, unique email and project code fields, composite unique constraints for assignments and time-based records, optional relations, enumerated values, and cascade or set-null deletion behavior. Activity payloads and raw commit collections use JSON because their structures vary by event or source.
+
+The declared schema currently has no explicit secondary index declarations beyond indexes implied by primary and unique constraints. The repository also contains only two checked-in migrations while the current schema includes additional models and fields. This migration mismatch should be resolved before claiming reproducible deployment. The source does not show explicit Prisma transactions around the coupled attendance/session state changes, so transaction boundaries are a future reliability improvement.
+
+\subsection{Backend API}
+
+The backend exposes authentication, user, project, session, activity, update, summary, report, attendance, dashboard, organization, GitHub, and AI routes. Representative endpoints include \texttt{POST /auth/login}, \texttt{POST /sessions/start}, \texttt{POST /activity/bulk}, \texttt{POST /summaries/generate}, \texttt{POST /summaries/manual}, and \texttt{POST /reports/weekly/generate}.
+
+Global error handling maps common Nest and Prisma failures to JSON responses. Duplicate records become conflict responses, missing records become not-found responses, invalid references become bad requests, and unexpected failures become generic internal-server errors. This gives all clients a consistent error shape.
+
+\subsection{Web Application}
+
+The React web client uses Next.js app-router pages, client components, Tailwind CSS, reusable UI primitives, Framer Motion, and Lucide icons. Employee pages cover dashboards, projects, daily summaries, connections, attendance, and profiles. Manager pages cover dashboards, employees, roles, projects, team summaries, weekly reports, and attendance.
+
+The web application includes loading, empty, error, and route-guard components. It uses a context provider for authentication state and an API wrapper for network operations. Some handlers under the Next.js \texttt{app/api} directory return mock or generated data without authentication or backend queries. Such routes are not treated as evidence of a complete live integration.
+
+\subsection{VS Code Extension and CLI}
+
+The extension uses the VS Code Extension API, TypeScript, esbuild, and \texttt{simple-git}. It provides a dashboard webview, status bar management, authentication state, local secret-file access, Git collection, and commands for the principal employee workflow. The CLI is an ESM Node.js package using Commander, Inquirer, Axios, Chalk, \texttt{simple-git}, and local configuration utilities. Both clients communicate with the same backend but maintain client-specific presentation and local-state behavior.
+
+\begin{table}[!t]
+\caption{Client Responsibilities and Shared Backend Operations}
+\label{tab:clients}
+\centering
+\footnotesize
+\begin{tabular}{p{0.17\columnwidth}p{0.28\columnwidth}p{0.28\columnwidth}}
+\specialrule{0.8pt}{0pt}{3pt}
+{\bfseries Client} & {\bfseries Primary interaction} & {\bfseries Shared operations}\\
+\midrule
+Web portal & Dashboards, forms, attendance, project and report views & Login, refresh, projects, summaries, reports\\
+VS Code extension & IDE commands, status bar, dashboard webview, Git collection & Extension login, sessions, updates, summaries\\
+Terminal CLI & Shell commands, prompts, local profile and session state & Login, check-in/out, sessions, updates, reports\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ============================================================
+% VIII. EXPERIMENTAL SETUP AND VALIDATION
+% ============================================================
+
+\section{Experimental Setup and Validation}
+
+The repository provides a basic automated testing structure rather than a complete empirical productivity evaluation. The root package configures Jest for TypeScript unit tests and provides scripts for unit tests, coverage, and NestJS end-to-end tests. Supertest is included for HTTP testing.
+
+The checked-in automated tests are currently narrow. The application controller specification and end-to-end specification primarily test the root endpoint and the ``Hello World!'' response. Additional JavaScript and TypeScript files serve as ad hoc login, dashboard, API, attendance, and diagnostic scripts. They are useful for manual verification but should not be described as comprehensive automated coverage.
+
+\begin{table}[!t]
+\caption{Implementation Validation Summary}
+\label{tab:validation}
+\centering
+\footnotesize
+\begin{tabular}{p{0.28\columnwidth}p{0.27\columnwidth}p{0.34\columnwidth}}
+\toprule
+\textbf{Area} & \textbf{Repository evidence} & \textbf{Current interpretation}\\
+\midrule
+Backend bootstrap & Jest controller and e2e configuration & Basic root endpoint coverage\\
+Authentication & Diagnostic login scripts and auth implementation & Manual/API verification path; broader tests needed\\
+Sessions and attendance & Attendance and API scripts & Operational checks exist; race tests needed\\
+Database & Prisma schema and migrations & Relational constraints declared; migration drift requires review\\
+Frontend & Next build/type configuration & Client application present; some mock handlers remain\\
+Extension and CLI & Type checking/build scripts and client code & Multi-client workflow implemented; manifest alignment needs review\\
+AI integration & OpenAI service and prompts & Configuration-dependent; no benchmark dataset in repository\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The implementation can therefore be evaluated for workflow behavior and software integration, but the repository does not provide a labeled dataset, controlled user study, productivity ground truth, or benchmark proving that generated reports measure productivity accurately. The appropriate claim is that Taskifier automates and structures engineering reporting, not that it predicts employee performance.
+
+High-value future tests include access and refresh-token expiration, role and permission denial, organization isolation, concurrent session starts, attendance/session transaction behavior, summary state transitions, assignment uniqueness, OpenAI failure handling, GitHub OAuth state validation, and frontend token-refresh behavior.
+
+% ============================================================
+% IX. EVALUATION METRICS
+% ============================================================
+
+\section{Evaluation Metrics}
+
+\subsection{Workflow and Data Integrity}
+
+The current implementation is evaluated primarily through domain invariants. Examples include one attendance record per user and UTC date, one daily summary per user and date, one weekly report per user and week start, and one assignment per user and project. These constraints provide deterministic integrity checks even though they do not measure the quality of generated prose.
+
+\subsection{Summary State Metrics}
+
+A daily summary can be counted by state: draft, approved, or rejected. The state transitions expose whether the employee has reviewed the generated content. A manual summary is created as approved, while an AI-generated summary begins as a draft. Regeneration updates the unique daily record and returns it to draft so that new activity can be reviewed.
+
+\subsection{AI Output Quality}
+
+No ground-truth evaluation metric for AI summary quality is implemented in the repository. Suitable future measures would include factual consistency against source events, human approval rate, edit distance between generated and final content, unsupported-claim rate, response latency, token usage, and failure rate. These would measure reporting assistance rather than employee productivity.
+
+\subsection{Operational Metrics}
+
+A deployed version should collect request latency, 401 refresh frequency, database query duration, OpenAI error and rate-limit frequency, email delivery outcomes, activity-ingestion volume, and report-generation duration. These metrics are not visibly configured in the current repository and are proposed as operational extensions.
+
+% ============================================================
+% X. RESULTS AND ANALYSIS
+% ============================================================
+
+\section{Results and Analysis}
+
+The implemented system provides an end-to-end data path from client action to persisted engineering report. An authenticated employee can start a project-associated session, have attendance created or updated for the UTC day, submit activity or work updates, generate a daily summary, edit the draft, and approve or reject it. Managers can access project, attendance, team-summary, dashboard, and report routes according to the authorization metadata applied by the backend.
+
+The multi-client design is a practical result of the architecture. The web portal supports structured dashboards and forms, the extension places session and update commands near the developer's workspace, and the CLI provides terminal access. All three clients use the same backend entities and central business rules, reducing the risk that one client records work in a separate incompatible format.
+
+The AI integration also provides a concrete reporting result. Daily summaries are generated from a date-limited context containing project names, commit messages, update notes, and completed session minutes. Weekly reports are generated from approved daily summary text. The prompts explicitly ask the model not to invent outcomes or merge unrelated commits. This makes the generation process more interpretable than an unconstrained request for a productivity judgment.
+
+At the same time, the results must be interpreted within the repository's current maturity. Automated tests cover only a small part of the backend, some frontend API handlers are mocks, migration history does not fully match the current schema, and external integrations depend on environment variables and network services. These limitations prevent a claim of production-grade reliability or validated productivity measurement.
+
+\begin{figure}[!t]
+    \centering
+    \begin{tikzpicture}[node distance=5pt]
+        \node[tasknode] (login) {1. Authenticate client};
+        \node[tasknode, below=of login] (start) {2. Start project-associated session};
+        \node[tasknode, below=of start] (collect) {3. Record attendance, activity events, and updates};
+        \node[tasknode, below=of collect] (generate) {4. Generate date-bounded daily summary};
+        \node[tasknode, below=of generate] (review) {5. Edit, approve, or reject summary};
+        \node[taskdata, below=of review] (report) {6. Aggregate approved summaries into weekly report};
+        \draw[taskarrow] (login) -- (start);
+        \draw[taskarrow] (start) -- (collect);
+        \draw[taskarrow] (collect) -- (generate);
+        \draw[taskarrow] (generate) -- (review);
+        \draw[taskarrow] (review) -- (report);
+    \end{tikzpicture}
+    \caption{Taskifier session-to-report workflow.}
+    \label{fig:taskifier_workflow}
+\end{figure}
+
+% ============================================================
+% XI. DISCUSSION
+% ============================================================
+
+\section{Discussion}
+
+A major advantage of Taskifier is the separation between raw work evidence and generated interpretation. Sessions, events, updates, and attendance remain stored as structured records. The AI service receives a selected context and produces a report, while the employee retains the ability to edit and approve the result. This preserves a path back to the source evidence and avoids presenting the language model as the sole authority.
+
+The multi-client architecture is another important design decision. A single API gives the web, extension, and CLI a common source of truth, while each client can match its environment. This is more maintainable than implementing separate persistence and authorization logic in each client. The cost is that token handling, refresh behavior, and API contract compatibility must be maintained across three clients.
+
+PostgreSQL and Prisma are appropriate for the domain because project membership, attendance, session ownership, summary status, and organization relationships benefit from relational constraints. JSON payloads provide flexibility for heterogeneous activity events, but they also reduce database-level structure for analytics. If event volume or analytical requirements increase, frequently queried event types could be normalized or indexed separately.
+
+The AI feature is intentionally narrower than a general assistant. It does not retrieve documents semantically, remember conversations, or make a formal prediction. Structured date filtering and prompt constraints reduce token usage and help limit unsupported statements. Nevertheless, prompts are not a complete factuality guarantee. Employee review, approval, source traceability, and future automated consistency checks remain important.
+
+Several security and operational concerns should be addressed before production deployment. Browser tokens are stored in localStorage, extension and CLI credentials are stored in a local JSON file, GitHub access tokens are persisted in the database, and explicit rate limiting and external-request timeouts are not visible. Organization-aware models exist, but all manager queries should be reviewed for resource and tenant ownership. These issues are not reasons to misrepresent the implementation; they define a clear hardening roadmap.
+
+% ============================================================
+% XII. LIMITATIONS AND FUTURE SCOPE
+% ============================================================
+
+\section{Limitations and Future Scope}
+
+The current implementation has several limitations.
+
+First, the repository does not provide comprehensive automated tests for the most important business paths. Authentication, authorization, session concurrency, organization isolation, AI failures, and summary transitions need focused unit and integration coverage.
+
+Second, parts of the web client use mock route handlers. Consequently, interface views should be distinguished from live backend behavior when evaluating the complete system.
+
+Third, the current migration directory does not visibly contain all schema changes represented in the current Prisma schema. The migration history should be reconciled so a new environment can reproduce the database reliably.
+
+Fourth, authentication storage requires production hardening. HttpOnly and Secure cookies or an equivalent protected browser-token design would reduce JavaScript access to browser credentials. VS Code SecretStorage and an operating-system keychain would be preferable to plaintext client files. Reset tokens should be hashed before storage, and GitHub tokens should be encrypted or delegated to a secrets system.
+
+Fifth, the synchronous external-service design can increase request latency. OpenAI and GitHub calls should receive explicit timeouts, retry and rate-limit policies, circuit breaking, and observability. Longer report generation could be moved to a background job system.
+
+Sixth, organization ownership must be enforced consistently at the query level. A role check alone does not prove that a manager belongs to the same organization as the employee, project, attendance record, or summary being requested.
+
+Future development will focus on:
+
+\begin{itemize}
+    \item expanding automated unit, integration, and end-to-end test coverage;
+    \item reconciling and validating the Prisma migration history;
+    \item adding organization-scoped authorization to every manager and reporting query;
+    \item improving token storage, refresh rotation, reset-token protection, and secret management;
+    \item adding rate limiting, timeouts, retries, and monitoring for external APIs;
+    \item moving expensive AI generation to asynchronous jobs when usage increases;
+    \item adding database indexes and pagination for high-volume activity and reporting queries;
+    \item replacing or clearly isolating mock frontend handlers from live API flows;
+    \item introducing human-reviewed evaluation metrics for AI factuality and usefulness; and
+    \item generating richer traceable reports that link summary statements to source events.
+\end{itemize}
+
+% ============================================================
+% XIII. CONCLUSION
+% ============================================================
+
+\section{Conclusion}
+
+Taskifier presents a multi-client platform for recording and explaining software-engineering work. Its architecture combines a Next.js and React web portal, a VS Code extension, a terminal CLI, a NestJS REST API, PostgreSQL persistence through Prisma, JWT authentication, GitHub integration, email notifications, and OpenAI-assisted reporting.
+
+The central workflow connects project assignments, work sessions, activity events, attendance, employee updates, daily summaries, and weekly reports. The AI component operates on structured, date-bounded work evidence and uses constrained prompts to produce drafts rather than unreviewed judgments. Daily summaries support editing and approval, enabling the employee to remain part of the reporting loop.
+
+The implementation establishes a practical foundation for developer-work reporting, but it should not be presented as a validated productivity measurement system. Its current limitations include narrow automated tests, partial mock frontend routes, migration drift, external-service reliability gaps, and credential-storage risks. Addressing these concerns through stronger tenant isolation, secure secret handling, reproducible migrations, asynchronous processing, and evidence-based AI evaluation would improve the system's readiness for broader organizational use.
+
+% ============================================================
+% ACKNOWLEDGMENT
+% ============================================================
+
+\section*{Acknowledgment}
+
+The authors acknowledge CMR Technical Campus and the Department of Computer Science and Engineering for providing the academic environment and resources required for the development of this project. The authors also express their gratitude to the project guide and departmental mentors for their guidance and support during the implementation and evaluation of Taskifier.
+
+% ============================================================
+% REFERENCES
+% ============================================================
+
+\balance
+
+\begin{thebibliography}{00}
+
+\bibitem{nestjs}
+NestJS, ``A progressive Node.js framework for building efficient and scalable server-side applications,'' \url{https://nestjs.com/}, accessed Sep. 2026.
+
+\bibitem{nextjs}
+Vercel, ``Next.js documentation,'' \url{https://nextjs.org/docs}, accessed Sep. 2026.
+
+\bibitem{react}
+Meta Open Source, ``React documentation,'' \url{https://react.dev/}, accessed Sep. 2026.
+
+\bibitem{postgresql}
+The PostgreSQL Global Development Group, ``PostgreSQL documentation,'' \url{https://www.postgresql.org/docs/}, accessed Sep. 2026.
+
+\bibitem{prisma}
+Prisma, ``Prisma ORM documentation,'' \url{https://www.prisma.io/docs}, accessed Sep. 2026.
+
+\bibitem{jwt}
+M. Jones, J. Bradley, and N. Sakimura, ``JSON Web Token (JWT),'' RFC 7519, Internet Engineering Task Force, May 2015. [Online]. Available: \url{https://www.rfc-editor.org/rfc/rfc7519}
+
+\bibitem{bcrypt}
+N. Provos and D. Mazieres, ``A future-adaptable password scheme,'' in \textit{Proc. USENIX Annual Technical Conference}, 1999, pp. 81--91.
+
+\bibitem{openai}
+OpenAI, ``API documentation,'' \url{https://platform.openai.com/docs}, accessed Sep. 2026.
+
+\bibitem{github}
+GitHub, ``GitHub REST API documentation,'' \url{https://docs.github.com/en/rest}, accessed Sep. 2026.
+
+\bibitem{passport}
+J. St. John, ``Passport: Simple, unobtrusive authentication for Node.js,'' \url{https://www.passportjs.org/}, accessed Sep. 2026.
+
+\end{thebibliography}
+
+\end{document}
